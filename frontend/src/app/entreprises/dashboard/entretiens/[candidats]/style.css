@@ -1,0 +1,87 @@
+.container {
+  display: flex;
+  min-height: 100vh;
+  font-family: Arial, sans-serif;
+}
+
+.container-dashbord {
+  display: flex;
+  margin-top: 0px;
+
+}
+
+.mainContent {
+  width: 100%;
+  padding-left: 17%;
+  padding-right: 50px;
+  min-height: 100vh;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.header h2 {
+  font-size: 18px;
+  color: #004aad;
+}
+
+.notesBox {
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 20px;
+  margin-top: 20px;
+  background-color: #fafafa;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.notesBox h3 {
+  margin-top: 0;
+  font-size: 16px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field label {
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.field textarea,
+.field input,
+.field select {
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 8px;
+  font-size: 14px;
+}
+
+.field textarea {
+  min-height: 60px;
+  resize: vertical;
+}
+
+.button {
+  background-color: #0070f3;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 18px;
+  font-size: 15px;
+  cursor: pointer;
+  align-self: flex-start;
+  transition: 0.2s;
+}
+
+.button:hover {
+  background-color: #0059c1;
+}

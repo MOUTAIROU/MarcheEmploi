@@ -1,0 +1,214 @@
+.popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  backdrop-filter: blur(4px);
+}
+
+.popup-body {
+  text-align: center;
+  margin-top: 20px;
+}
+
+input[type="date"] {
+  display: block;
+  text-align: center;
+  padding: 10px 12px;
+  border: 1px solid #d6dbe6;
+  border-radius: 6px;
+  font-size: 14px;
+  background: #fff;
+  width: 100%;
+  margin-top: 19px;
+}
+
+.popup-body textarea {
+  text-align: left;
+  background: #fff;
+  border: 1px solid #d6dbe6;
+  border-radius: 6px;
+  width: 100%;
+  margin-top: 19px;
+  padding: 10px 12px;
+  font-size: 14px;
+  display: block;
+}
+
+.popup-content {
+  background: #ffffff;
+  padding: 32px 24px;
+  border-radius: 20px;
+  text-align: center;
+  position: relative;
+  width: 90%;
+  max-width: 600px;
+  transition: transform 0.35s ease, opacity 0.35s ease;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+}
+
+.popup-title {
+  margin-top: 0;
+  font-size: 1.5rem;
+  color: #333;
+  font-weight: 600;
+}
+
+.popup-message {
+  font-size: 1rem;
+  color: #555;
+  margin-top: 10px;
+}
+
+.popup-close {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  font-size: 24px;
+  background: none;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.popup-close:hover {
+  color: #333;
+}
+
+.popup-button {
+  margin-top: 20px;
+  background: linear-gradient(90deg, #007bff, #00c6ff);
+  color: white;
+  border: none;
+  padding: 12px 28px;
+  border-radius: 50px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: background 0.3s ease;
+}
+
+.popup-button:hover {
+  background: linear-gradient(90deg, #0056b3, #0099cc);
+}
+
+/* Animations */
+.fade-in {
+  animation: fadeIn 0.3s forwards;
+}
+
+.fade-out {
+  animation: fadeOut 0.3s forwards;
+}
+
+.zoom-in {
+  transform: scale(1);
+  opacity: 1;
+}
+
+.zoom-out {
+  transform: scale(0.9);
+  opacity: 0;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+/* Container général pour les dates */
+.date-fields {
+  display: flex;
+  gap: 1rem;
+  /* espace entre début et fin */
+  margin-top: 1rem;
+  flex-wrap: wrap;
+  /* pour petits écrans */
+}
+
+.date-fields label {
+  display: flex;
+  flex-direction: column;
+  font-weight: 500;
+  font-size: 0.9rem;
+  color: #333;
+  flex: 1;
+}
+
+.popup-input[type="datetime-local"] {
+  margin-top: 0.3rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  transition: border 0.2s, box-shadow 0.2s;
+}
+
+.popup-input[type="datetime-local"]:focus {
+  border-color: #4f46e5;
+  /* couleur accentuée */
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+  outline: none;
+}
+
+/* Checkbox styled */
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  margin-top: 1rem;
+  font-size: 0.95rem;
+}
+
+.checkbox-row input[type="checkbox"] {
+  margin-right: 0.5rem;
+  accent-color: #4f46e5;
+}
+
+/* Textarea pour emails */
+.popup-textarea {
+  width: 100%;
+  min-height: 80px;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 0.9rem;
+  resize: vertical;
+  margin-top: 0.5rem;
+}
+
+/* Messages d'erreur */
+.error-text {
+  color: #dc2626;
+  /* rouge vif */
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+}
+
+/* Pour petits écrans, champs empilés */
+@media (max-width: 500px) {
+  .date-fields {
+    flex-direction: column;
+  }
+}

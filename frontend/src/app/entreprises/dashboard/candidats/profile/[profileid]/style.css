@@ -1,0 +1,205 @@
+/* styles.css - simple CSS (no frameworks) */
+.entreprise-page {
+  padding: 1rem 8%;
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  background: #f6f9fb;
+  min-height: 100vh;
+  text-align: left;
+}
+
+.card {
+  width: 100%;
+  margin: 0 auto;
+  background: #fff;
+  border-radius: 10px;
+  padding: 24px;
+  box-shadow: 0 6px 18px rgba(14, 38, 71, 0.06);
+  border: 1px solid #e6eef6;
+}
+
+/* header row */
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.card-header .left {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.badge {
+  background: #1db65f; /* vert */
+  color: #fff;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  white-space: nowrap;
+}
+
+.share-link {
+  color: #5b6b7a;
+  text-decoration: underline;
+  font-size: 13px;
+}
+
+/* reste */
+.reste {
+  color: #0a63d8;
+  font-weight: 700;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+/* title */
+.titre {
+  font-size: 16px;
+  line-height: 1.4;
+  margin: 10px 0 14px;
+  color: #222;
+  font-weight: 700;
+}
+
+/* CTAs */
+.ctas {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  text-decoration: none;
+  border: none;
+}
+
+.btn-primary {
+  background: #ff8a00;
+  color: #fff;
+}
+
+.btn-secondary {
+  background: #fff3e6;
+  color: #8a4b00;
+  border: 1px solid #ffd9a8;
+}
+
+/* content paragraphs */
+.content {
+  margin-bottom: 18px;
+  color: #333;
+}
+
+.para {
+  margin: 12px 0;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #4b5563;
+}
+
+/* infos row */
+.infos {
+  display: flex;
+  gap: 20px;
+  border-top: 1px solid #eef6fb;
+  padding-top: 16px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.info-item {
+  min-width: 140px;
+}
+
+.info-item label {
+  display: block;
+  font-size: 13px;
+  color: #6b7280;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.info-val {
+  margin-top: 6px;
+  font-weight: 700;
+  color: #1f2937;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.flag {
+  width: 20px;
+  height: 14px;
+  object-fit: cover;
+  border-radius: 2px;
+}
+
+/* force certains mots à rester sur la même ligne */
+.nowrap {
+  white-space: nowrap;
+}
+
+/* actions */
+.actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.action {
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+}
+
+.btn-ghost {
+  background: #234fa6;
+  color: #fff;
+}
+
+.btn-outline {
+  background: #eef2ff;
+  color: #1f3bb3;
+  border: 1px solid rgba(31,59,179,0.08);
+}
+
+.btn-danger {
+  background: #ff2b2b;
+  color: #fff;
+}
+
+/* responsive */
+@media (max-width: 720px) {
+  .card {
+    padding: 16px;
+  }
+  .infos {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .ctas {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .cta .btn {
+    width: 100%;
+  }
+}

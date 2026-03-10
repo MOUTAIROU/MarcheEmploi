@@ -1,0 +1,6 @@
+pip install fastapi uvicorn pydantic langchain langchain-core langchain-community python-dotenv pdfplumber Pillow pytesseract python-multipart langchain-openai
+python -m uvicorn main:app --reload --port 8000
+
+
+Pour lancer le serveur => python -m uvicorn main:app --reload --host 0.0.0.0 --port 8000
+

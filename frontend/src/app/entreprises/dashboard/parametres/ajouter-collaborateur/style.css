@@ -1,0 +1,67 @@
+.container {
+    display: flex;
+    min-height: 100vh;
+    font-family: Arial, sans-serif;
+}
+
+.container-dashbord {
+    display: flex;
+    margin-top: 0px;
+
+}
+
+.mainContent {
+    width: 100%;
+    padding-left: 17%;
+    padding-right: 50px;
+    min-height: 100vh;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.header h2 {
+  font-size: 18px;
+  color: #004aad;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+}
+
+label {
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+input {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  margin-bottom: 15px;
+  font-size: 14px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.save-btn {
+  background-color: #0056ff;
+  color: white;
+  font-weight: 600;
+  padding: 10px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  margin-top: 10px;
+
+}
+
+.save-btn:hover {
+  background-color: #0040cc;
+}

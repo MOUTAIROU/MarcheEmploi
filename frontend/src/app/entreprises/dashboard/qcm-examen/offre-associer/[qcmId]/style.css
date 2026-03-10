@@ -1,0 +1,131 @@
+.container {
+  display: flex;
+  min-height: 100vh;
+  font-family: Arial, sans-serif;
+}
+
+.container-dashbord {
+  display: flex;
+  margin-top: 0px;
+
+}
+
+.mainContent {
+  width: 100%;
+  padding-left: 17%;
+  padding-right: 50px;
+  min-height: 100vh;
+}
+
+/* Main Content */
+.main {
+  flex: 1;
+  padding: 30px;
+  background-color: #fff;
+}
+
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.mainContent {
+  background: #f5f7fb;
+  min-height: 100vh;
+}
+
+/* Titres */
+.mainContent h2 {
+  margin: 25px 0 10px;
+  font-size: 20px;
+  font-weight: dec 600;
+  color: #1f2937;
+}
+
+/* Inputs recherche */
+.mainContent input[type="text"] {
+  width: 100%;
+  max-width: 350px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  outline: none;
+  transition: 0.2s;
+}
+
+.mainContent input[type="text"]:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
+/* Table */
+.offre-associer .table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 30px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+/* Header */
+.offre-associer .table thead {
+  background: #f1f5f9;
+}
+
+.offre-associer .table th {
+  text-align: left;
+  padding: 14px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* Rows */
+.offre-associer .table td {
+  padding: 14px 16px;
+  font-size: 14px;
+  color: #111827;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+/* Hover */
+.offre-associer .table tbody tr:hover {
+  background: #f9fafb;
+}
+
+/* Boutons */
+.offre-associer .table button {
+  padding: 7px 14px;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+/* Ajouter */
+.offre-associer .table button {
+  background: #2563eb;
+  color: #fff;
+}
+
+.offre-associer .table button:hover {
+  background: #1e40af;
+}
+
+/* Bouton retirer */
+.offre-associer .table button.retirer {
+  background: #ef4444;
+}
+
+.offre-associer .table button.retirer:hover {
+  background: #b91c1c;
+}

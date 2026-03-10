@@ -1,0 +1,44 @@
+.entreprise-container {
+  max-width: 850px;
+  margin: 0 auto;
+  padding: 2rem;
+  font-family: Arial, sans-serif;
+  line-height: 1.6;
+}
+
+.logo-box {
+  width: 160px;
+  height: 160px;
+  border: 2px dashed #bbb;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.2rem;
+  font-size: 14px;
+  color: #777;
+}
+
+.entreprise-title {
+  font-size: 2rem;
+  margin-bottom: 1.5rem;
+  font-weight: bold;
+}
+
+.section {
+  margin-bottom: 2rem;
+}
+
+.section h2 {
+  margin-bottom: 0.6rem;
+  font-size: 1.3rem;
+  color: #333;
+}
+
+.section ul {
+  padding-left: 1.2rem;
+}
+
+.section ul li {
+  margin-bottom: 0.4rem;
+}

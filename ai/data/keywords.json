@@ -1,0 +1,8 @@
+{
+  "identite": ["nom", "prénom", "naissance", "email", "téléphone"],
+  "formation": ["diplôme", "licence", "master", "université", "école"],
+  "experience": ["expérience", "travail", "poste", "mission", "entreprise"],
+  "competence": ["langage", "compétence", "outil", "logiciel", "technologie"],
+  "langue": ["anglais", "français", "espagnol", "niveau", "courant"],
+  "centre_interet": ["loisir", "sport", "bénévolat", "association"]
+}

@@ -1,0 +1,219 @@
+.container {
+  display: flex;
+  min-height: 100vh;
+  font-family: Arial, sans-serif;
+}
+
+
+.container-dashbord {
+  display: flex;
+  margin-top: 0px;
+
+}
+
+.mainContent {
+  width: 100%;
+  padding-left: 17%;
+  padding-right: 50px;
+  min-height: 100vh;
+}
+
+/* Main Content */
+.main {
+  flex: 1;
+  padding: 30px;
+  background-color: #fff;
+}
+
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  z-index: 1 !important;
+  padding: 20px 5px !important;
+}
+
+.header h2 {
+  font-size: 14px !important;
+  color: #004aad;
+}
+
+.createButton {
+  background: #004aad;
+  color: white;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px !important;
+}
+
+.createButton:hover {
+  background: #003c8a;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.search {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+.filter,
+.groupAction {
+  background: #f5f5f5;
+  border: 1px solid #ccc;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.filter:hover,
+.groupAction:hover {
+  background: #eaeaea;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  background: white;
+}
+
+.table th,
+.table td {
+  padding: 10px 8px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+  font-size: 13.5px;
+}
+
+.table tbody tr:hover>td {
+  background: #eaeaea;
+  cursor: pointer;
+}
+
+.table th {
+  background: #f9f9f9;
+  font-weight: 600;
+}
+
+.status {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 8px;
+  font-weight: 500;
+  color: white;
+}
+
+.active {
+  background: #28a745;
+}
+
+.wait {
+  background: #ffc107 !important;
+  color: #222;
+}
+
+.expired {
+  background: #dc3545 !important;
+}
+
+.filter {
+  background: #f5f5f5;
+  border: 1px solid #ccc;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.filter:hover {
+  background: #eaeaea;
+}
+
+.dropdown {
+  position: absolute !important;
+  top: 110%;
+  left: 0;
+  width: 180px;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  z-index: 10;
+}
+
+.dropdownItem {
+  cursor: pointer;
+  padding: 5px 15px;
+  transition: background .2s;
+  font-size: 12px;
+  border-bottom: 1px solid #2b2a2a;
+}
+
+.dropdownItem:hover {
+  background: #f0f0f0;
+}
+
+.filterWrapper {
+  position: relative;
+}
+
+.gearButton {
+  background: transparent;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.gearButton:hover {
+  color: #004aad;
+}
+
+.dropdownRow {
+  position: absolute;
+  bottom: 23px;
+  right: 60px;
+  width: 220px;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  z-index: 20;
+  animation: fadeIn 0.2s ease;
+}
+
+.dropdownItemRow {
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.dropdownItemRow:hover {
+  background: #f0f0f0;
+}
+
+.param-btn {
+  position: relative;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

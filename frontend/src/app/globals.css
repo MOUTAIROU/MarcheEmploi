@@ -1,0 +1,410 @@
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+html,
+body {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+a {
+  text-decoration: none;
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+  font-size: 14px;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  html {
+    color-scheme: dark;
+  }
+}
+
+.hero {
+  align-items: center;
+  min-height: 500px;
+  display: flex;
+  position: relative;
+  overflow: hidden;
+  margin: 1rem 8%;
+}
+
+.heroImage {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 0;
+  /* derrière le texte */
+}
+
+.heroImage img {
+  height: 100%;
+  width: auto;
+  object-fit: cover;
+}
+
+.textContent {
+  position: relative;
+  z-index: 1;
+  /* au-dessus de l’image */
+  max-width: 500px;
+}
+
+
+.title {
+  margin-bottom: 30px;
+  font-size: 2rem;
+  font-weight: bold;
+  color: #2563eb;
+  font-style: oblique;
+}
+
+.search-container {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+}
+
+.search-container input {
+  border: 3px solid #2563eb;
+  border-radius: 25px;
+  width: 100%;
+  padding: 10px 10px 10px 35px;
+  font-size: 1rem;
+  height: 60px;
+}
+
+.search-container .icon {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #888;
+  font-size: 1.2rem;
+}
+
+.container-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0px;
+  padding: 0px 20px;
+  margin: 0rem 8%;
+  min-height: 100vh;
+}
+
+section {
+  padding: 20px;
+  border-radius: 12px;
+}
+
+h2 {
+  color: #1e40af;
+  margin-bottom: 15px;
+}
+
+ul li {
+  margin-bottom: 10px;
+}
+
+.btn {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-top: 15px;
+}
+
+
+.offres,
+.entreprises {
+  background-color: #2563eb;
+  padding: 20px;
+}
+
+.emplois {
+  padding: 20px;
+}
+
+.offres h4,
+.entreprises h2 {
+  color: #ffffff;
+  padding-bottom: 0px;
+  font-size: 1.5rem;
+}
+
+.offres .offre-card,
+.appels-doffres .offre-card {
+  background: #fff;
+  padding: 10px;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  box-shadow: 6px 6px 5px 0px rgba(183, 206, 247, 0.75);
+  -webkit-box-shadow: 6px 6px 5px 0px rgba(183, 206, 247, 0.75);
+  -moz-box-shadow: 6px 6px 5px 0px rgba(183, 206, 247, 0.75);
+}
+
+.offres .offre-card h3,
+.appels-doffres .offre-card h3 {
+  font-size: 13px;
+  color: #3d3d3d;
+  padding-bottom: 2px;
+  margin-bottom: 0px;
+}
+
+.offres .offre-card p,
+.appels-doffres .offre-card p {
+  font-size: 12px;
+  color: #676666;
+  margin-bottom: 0px;
+}
+
+.offres .offre-card .date,
+.appels-doffres .offre-card .date {
+  font-size: 12px;
+  color: #8d8a8a;
+}
+
+.offres .status,
+.appels-doffres .status {
+  color: #fff;
+  background-color: green;
+  border-radius: 30px;
+  margin-top: 0px;
+  margin-left: 10px;
+  padding: 2px 9px;
+  font-size: 9px;
+  font-weight: bold;
+  display: inline-block;
+}
+
+.offres .offre-card .link,
+.appels-doffres .offre-card .link {
+  color: #2563eb;
+  cursor: pointer;
+  text-align: end;
+  background: none;
+  border: none;
+  align-self: flex-end;
+  justify-items: flex-end;
+  width: 100%;
+  margin-top: 0px;
+  font-weight: bold;
+  display: block;
+  font-size: 0.7rem;
+}
+
+.illustration {
+  grid-column: span 2;
+  text-align: center;
+}
+
+.illustration img {
+  width: 250px;
+}
+
+.emplois h2,
+.appels-doffres h2 {
+  color: #2563eb;
+  margin-bottom: 14px;
+  padding-bottom: 0px;
+  font-size: 1.5rem;
+}
+
+.emplois ul li {
+  margin-bottom: 10px;
+  font-size: 15px;
+  font-weight: 500;
+  list-style: none;
+  color: #323232;
+  display: flex;
+}
+
+.emplois ul li .icons-circle {
+  justify-content: flex-start;
+  align-items: flex-start;
+  margin-right: 10px;
+  display: inline-flex;
+  padding-top: 6px;
+}
+
+.emplois ul li .icons-circle svg {
+  color: #2563eb;
+  font-size: 0.8rem;
+}
+
+.emplois ul {
+  padding: 0px;
+}
+
+.emplois .btn,
+.appels-doffres .btn {
+  cursor: pointer;
+  border: none;
+  border-radius: 8px;
+  margin-top: 15px;
+  font-size: 16px;
+  background-color: #2563eb;
+  color: #ffffff;
+  width: auto;
+  justify-self: anchor-center;
+  padding: 15px 95px;
+  display: flex;
+  font-weight: 700;
+
+}
+
+.emplois .btn:hover {
+  background: #1d4ed8;
+}
+
+.offreP {
+  border-radius: 50px;
+  background-color: #008000;
+  color: #ffffff;
+  font-size: 12px;
+  padding: 4px 10px;
+  font-style: oblique;
+}
+
+.offres .btn {
+  cursor: pointer;
+  border: none;
+  border-radius: 8px;
+  margin-top: 15px;
+  font-size: 16px;
+  background-color: #ffffff;
+  color: #2563eb;
+  width: auto;
+  display: flex;
+  justify-self: anchor-center;
+  padding: 15px 38px;
+  font-weight: 700;
+
+}
+
+.emplois .btn:hover {
+  background-color: #2563eb;
+  color: #ffffff;
+}
+
+.offres .btn:hover {
+  background-color: #ffffff;
+  color: #2563eb;
+}
+
+.entreprises ul li {
+  list-style: none;
+}
+
+.entreprises ul {
+  margin: 0px;
+  padding: 0px;
+  font-style: italic;
+}
+
+.entreprises p,
+.appeldoffres p {
+  color: #fff;
+}
+
+.entreprises-titre {
+  display: block;
+  color: #ffffff;
+}
+
+.entreprises-titre-ctn {
+  padding-left: 10px;
+  font-weight: 500;
+}
+
+.entreprises-des {
+  display: block;
+  margin-left: 25px;
+  color: #fdfcfc;
+  font-size: 13px;
+}
+
+.entreprises .btn {
+  cursor: pointer;
+  color: #2563eb;
+  justify-self: anchor-center;
+  background-color: #fff;
+  border: none;
+  border-radius: 8px;
+  width: auto;
+  margin-top: 15px;
+  padding: 15px 38px;
+  font-size: 16px;
+  font-weight: 700;
+  display: flex;
+}
+
+.entreprises-titre .icons-circle svg {
+  font-size: .8rem;
+}
+
+.entreprises {
+  height: max-content;
+}
+
+.recrutement-image-ctn {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+
+}
+
+.recrutement-image-ctn img {
+  height: 100%;
+  width: 100%;
+}
+
+.container-section-auto {
+  min-height: auto !important;
+}
+
+.appels-doffres {
+  padding: 20px;
+}
+
+.appels-doffres .offre-card {
+  border: 2px solid #2563eb8a;
+}
+
+.appeldoffres ul {
+  padding: 0px;
+}
+
+.appeldoffres ul li {
+  list-style: none;
+}

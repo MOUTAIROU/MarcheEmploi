@@ -1,0 +1,179 @@
+.containeremploi {
+    width: 100%;
+    margin: 0 auto;
+    font-family: Arial, sans-serif;
+}
+
+.emploihero {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #f5f9ff;
+    padding: 1rem 8%;
+    border-radius: 8px;
+    margin-bottom: 40px;
+    height: 400px;
+}
+
+.textContent h1 {
+    color: #1e007b;
+    margin-bottom: 20px;
+    font-size: 30px;
+    font-weight: bold;
+    line-height: 1.4;
+}
+
+.primaryBtnCtn {
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    align-items: anchor-center;
+    width: 45%;
+}
+
+.primaryBtnCtn a {
+    padding-top: 16px;
+    text-align: center;
+}
+
+.primaryBtn {
+    color: #fff;
+    cursor: pointer;
+    background-color: #0070f3;
+    border: none;
+    border-radius: 35px;
+    margin-right: 15px;
+    padding: 15px 24px;
+    font-size: 16px;
+    width: 101%;
+    font-weight: 700;
+}
+
+.primaryBtn:hover {
+    background-color: #0055aa;
+}
+
+.link {
+    color: #0070f3;
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.link:hover {
+    text-decoration: underline;
+}
+
+.containeremploi .imagectn {
+    width: 50%;
+}
+
+.containeremploi .imagectn img {
+    color: transparent;
+    width: 100%;
+    height: 100%;
+}
+
+.containeremploi .textContent {
+    z-index: 1;
+    /* max-width: 500px; */
+    position: relative;
+    width: 50%;
+}
+
+.solution {
+    padding: 1rem 8%;
+    text-align: center;
+    margin-top: 80px;
+}
+
+.solution h2 {
+    font-weight: 700;
+    color: #525252;
+}
+
+.solution h6{
+  color: #525252;
+    font-weight: 700;
+    font-size: 24px;  
+}
+.searchemploiTop{
+  margin-top: 32px;  
+}
+.textContent3 {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.textContent3 h3,
+.textContent3 h4,
+.textContent3 h5,
+.textContent3 h6 {
+    padding-bottom: 15px;
+    font-weight: 600;
+    color: #216fe5;
+    font-size: 24px;
+}
+
+.solution p {
+    padding-top: 11px;
+}
+
+.searchemploi {
+    padding: 1rem 8%;
+    display: flex
+}
+
+.searchemploi ul {
+    padding-left: 14px;
+
+}
+
+.searchemploi ul {
+    list-style: none;
+}
+
+.textContent3 p {
+    font-size: 16px;
+    padding-bottom: 10px;
+}
+
+.searchemploi ul li {
+    margin-bottom: 10px;
+    display: flex;
+    padding-bottom: 10px;
+}
+
+.searchemploi ul li .icons-circle {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    padding-right: 10px;
+}
+
+.searchemploi ul li .icons-circle-txt {
+    display: inline-flex;
+}
+
+.separation {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 1rem 8%;
+    text-align: center;
+}
+
+.separationctn {
+    background-color: #d8e2f2;
+    height: 10px;
+    width: 71%;
+    border-radius: 20px;
+}
+
+.heightImage{
+  height: 80%!important;
+}
+
+.heightImage2{
+  height: 73%!important;
+}

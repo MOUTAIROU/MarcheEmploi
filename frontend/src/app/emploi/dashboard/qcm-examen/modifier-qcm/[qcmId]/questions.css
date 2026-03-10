@@ -1,0 +1,298 @@
+.question-container {
+  max-width: 850px;
+  margin: 30px auto;
+  font-family: "Inter", sans-serif;
+}
+
+.question-box {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  margin-bottom: 10px;
+  background: #fafafa;
+  overflow: hidden;
+}
+
+.question-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 15px;
+  cursor: pointer;
+  background: #f3f4f6;
+}
+
+.question-header:hover {
+  background: #e5e7eb;
+}
+
+.question-body {
+  padding: 10px 15px;
+  background: white;
+  border-top: 1px solid #ddd;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-edit,
+.btn-delete {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.btn-delete:hover {
+  color: #dc2626;
+}
+
+.btn-edit:hover {
+  color: #2563eb;
+}
+
+.arrow {
+  font-size: 0.9rem;
+}
+
+.btn-add {
+  margin-top: 15px;
+  background: #2563eb;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn-add:hover {
+  background: #1d4ed8;
+}
+
+.btn-cancel {
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn-cancel:hover {
+  background: #e5e7eb;
+}
+
+.question-form {
+  margin-top: 20px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 20px;
+  background: #fff;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 15px;
+}
+
+.field label {
+  font-weight: 500;
+  margin-bottom: 5px;
+}
+
+.field input,
+.field textarea {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.95rem;
+}
+
+.row {
+  display: flex;
+  gap: 15px;
+}
+
+.btn-small {
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.btn-small:hover {
+  background: #e5e7eb;
+}
+
+.option-list {
+  margin-top: 8px;
+  padding-left: 20px;
+  font-size: 0.9rem;
+}
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 15px;
+}
+
+
+
+.section {
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 15px;
+  margin-bottom: 20px;
+  background-color: #fff;
+}
+
+.section-title {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.section-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.radio-item,
+.checkbox-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.add-option {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.add-option input {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.add-option button {
+  padding: 6px 14px;
+  background-color: #f2f2f2;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.add-option button:hover {
+  background-color: #e8e8e8;
+}
+
+textarea {
+  width: 100%;
+  min-height: 80px;
+  resize: vertical;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 8px;
+  font-size: 14px;
+}
+
+.submit-section {
+  text-align: center;
+}
+
+.add-question-btn {
+  width: 100%;
+  padding: 10px;
+  border-radius: 6px;
+  background-color: #f8f8f8;
+  border: 1px solid #ccc;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.add-question-btn:hover {
+  background-color: #eaeaea;
+}
+
+.field select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  background-color: #fff;
+  font-size: 14px;
+  color: #333;
+}
+
+.field select:focus {
+  outline: none;
+  border-color: #0070f3;
+  box-shadow: 0 0 0 2px rgba(0, 112, 243, 0.2);
+}
+
+.option {
+  margin-bottom: 15px;
+}
+
+.option label {
+  font-weight: 600;
+  display: block;
+  margin-bottom: 5px;
+}
+
+.radio-group {
+  display: flex;
+  gap: 15px;
+  margin-left: 10px;
+}
+
+.radio-group label {
+  font-weight: 400;
+}
+
+input[type="radio"] {
+  margin-right: 5px;
+}
+
+.button-row {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 25px;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  padding: 10px 15px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.preview-btn {
+  background-color: #f5f5f5;
+  color: #333;
+}
+
+.save-btn {
+  background-color: #f5f5f5;
+  color: #333;
+}
+
+.publish-btn {
+  background-color: #28a745;
+  color: white;
+  width: 100%;
+  margin-top: 20px;
+}
+
+.publish-btn:hover {
+  background-color: #218838;
+}

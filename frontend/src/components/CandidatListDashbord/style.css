@@ -1,0 +1,99 @@
+.candidate-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.candidate-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 16px;
+  background: white;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease;
+}
+
+.candidate-card:hover {
+  transform: translateY(-2px);
+}
+
+.candidate-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+  gap: 8px;
+  font-size: 14px;
+  color: #222;
+}
+
+.candidate-header img {
+  width: 20px;
+  height: 14px;
+  margin-right: 5px;
+  vertical-align: middle;
+  border-radius: 2px;
+}
+
+.candidate-body {
+  margin-bottom: 12px;
+}
+
+.resume, .profil {
+  margin-bottom: 12px;
+}
+
+.resume strong, .profil strong {
+  display: block;
+  margin-bottom: 4px;
+  font-weight: 600;
+  color: #0c5fa5;
+}
+
+.resume p, .profil p {
+  margin: 0;
+  font-size: 14px;
+  color: #222;
+  line-height: 1.5;
+}
+
+.profil p {
+  margin-top: 4px;
+}
+
+.candidate-footer {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btn-visiter, .btn-enregistrer {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.btn-visiter {
+  background-color: #0ca14b;
+  color: white;
+}
+
+.btn-visiter:hover {
+  background-color: #089f42;
+  transform: translateY(-1px);
+}
+
+.btn-enregistrer {
+  background-color: #0078ff;
+  color: white;
+}
+
+.btn-enregistrer:hover {
+  background-color: #0065d1;
+  transform: translateY(-1px);
+}

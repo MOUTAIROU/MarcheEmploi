@@ -1,0 +1,167 @@
+button,
+input,
+optgroup,
+select,
+textarea {
+    text-align: left !important;
+}
+
+.container {
+    display: flex;
+    min-height: 100vh;
+    font-family: Arial, sans-serif;
+}
+
+.container-dashbord {
+    display: flex;
+    margin-top: 0px;
+
+}
+
+.entreprise-logo-home {
+    height: 100%;
+    width: 100%
+}
+
+.mainContent {
+    width: 100%;
+    padding-left: 17%;
+    padding-right: 50px;
+}
+
+/* Main Content */
+.main {
+    flex: 1;
+    padding: 30px;
+    background-color: #fff;
+}
+
+/* Header */
+.header-main-dashbord {
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    display: flex;
+    padding-top: 28px;
+}
+
+.userInfo {
+    display: flex;
+    align-items: center;
+}
+
+.section-dashboard {
+    padding: 20px;
+    padding-left: 0px !important;
+}
+
+.avatar {
+    background-color: #ccc;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    margin-right: 10px;
+}
+
+.userName {
+    font-size: 15px;
+    font-weight: bold;
+}
+
+.updateBtn {
+    font-size: 14px;
+    color: #fff;
+    cursor: pointer;
+    background-color: #555;
+    border: none;
+    border-radius: 5px;
+    padding: 7px 16px;
+}
+
+.updateBtn:hover {
+    background-color: #333;
+}
+
+/* Stats */
+.stats h3 {
+    color: #0066ff;
+    margin-bottom: 10px;
+    font-size: 23px;
+}
+
+.cards {
+    border-radius: 10px;
+    justify-content: space-around;
+    gap: 30px;
+    padding: 25px;
+    display: flex;
+    border: 1px solid #0066ff38;
+}
+
+.card {
+    border: none !important;
+    text-align: center;
+}
+
+.card h2 {
+    color: #06f;
+    margin: 0;
+    font-weight: bold;
+    font-size: 7rem;
+}
+
+.card p {
+    color: #555;
+    font-size: 14px;
+}
+
+/* Buttons */
+.buttons {
+    margin-top: 30px;
+    display: flex;
+    gap: 15px;
+}
+
+.primaryBtn {
+    border: 2px solid #0066ff;
+    background: #ffffff;
+    color: #0066ff;
+    font-weight: 500;
+    font-size: 14px;
+    padding: 10px 20px;
+    border-radius: 5px;
+}
+
+.primaryBtn:hover {
+    background-color: #004dcc;
+}
+
+.secondaryBtn {
+    background-color: #555;
+    color: #fff;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.secondaryBtn:hover {
+    background-color: #333;
+}
+
+
+.annonce-list-ctn {
+    padding: 10px 0%;
+}
+
+.annonce-list-ctn-dashbord-titre {
+    padding-top: 50px;
+}
+
+.annonce-list-ctn-dashbord-titre h3 {
+    font-size: 16px;
+    text-decoration: underline;
+    text-decoration-color: #555555;
+    text-decoration-thickness: 2px;
+}

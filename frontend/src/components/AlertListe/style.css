@@ -1,0 +1,63 @@
+.annonce-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.annonce-card {
+  padding: 14px 16px;
+  border-radius: 10px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  transition: 0.2s;
+}
+
+.annonce-card:hover {
+  background: #f9fafb;
+}
+
+.annonce-card.nonlu {
+  border-left: 4px solid #2563eb;
+  background: #f0f6ff;
+}
+
+.annonce-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.icon {
+  font-size: 18px;
+}
+
+.titre {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.badge {
+  margin-left: auto;
+  font-size: 11px;
+  background: #2563eb;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 6px;
+}
+
+.texte {
+  margin: 6px 0;
+  color: #374151;
+  font-size: 14px;
+}
+
+.date {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.titreLink {
+  text-decoration: none;
+  color: inherit;
+}

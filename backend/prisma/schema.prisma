@@ -1,0 +1,27 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"   // MySQL ou mariadb
+  // url = env("DATABASE_URL")  --> supprimé en Prisma 7
+}
+
+model User {
+  id        String   @id
+  nom       String
+  email     String   @unique
+  password  String
+  role      Role
+  pays      String
+  codePays  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum Role {
+  candidat
+  entreprise
+  freelance
+}

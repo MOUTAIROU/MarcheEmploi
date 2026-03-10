@@ -1,0 +1,165 @@
+.container {
+    display: flex;
+    min-height: 100vh;
+    font-family: Arial, sans-serif;
+}
+
+.container-dashbord {
+    display: flex;
+    margin-top: 0px;
+
+}
+
+.mainContent {
+    width: 100%;
+    padding-left: 17%;
+    padding-right: 50px;
+    min-height: 100vh;
+}
+
+/* Main Content */
+
+.main {
+    flex: 1;
+    padding: 30px;
+    background-color: #fff;
+}
+
+
+h3 {
+    color: #004aad;
+    margin-bottom: 12px;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 15px;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border-radius: 6px;
+    overflow: visible;
+
+}
+
+.table th,
+.table td {
+    padding: 10px 14px;
+    text-align: left;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.table th {
+    background-color: #f7f7f7;
+    font-weight: bold;
+}
+
+.table tr:hover {
+    background-color: #f9f9f9;
+}
+
+.status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+.link {
+    color: #004aad;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.link:hover {
+    text-decoration: underline;
+}
+
+.titre-content {
+    margin: 28px 0px;
+}
+
+.titre-content h3 {
+    font-weight: 600;
+    color: #003ab9;
+}
+
+.dropdownRow {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    width: 220px;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    z-index: 20;
+    animation: fadeIn 0.2s ease;
+}
+
+.dropdownItemRow {
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.dropdownItemRow:hover {
+    background: #f0f0f0;
+}
+
+.dropdownItem {
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.dropdownItem:hover {
+    background: #f0f0f0;
+}
+
+
+.filterWrapper {
+    position: relative;
+}
+
+.filter,
+.groupAction {
+    background: #f5f5f5;
+    border: 1px solid #ccc;
+    padding: 8px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.filter:hover,
+.groupAction:hover {
+    background: #eaeaea;
+}
+
+.dropdown {
+    position: absolute !important;
+    top: 110%;
+    left: 0;
+    width: 180px;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    z-index: 10;
+}
+
+.dropdownItem {
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.dropdownItem:hover {
+    background: #f0f0f0;
+}

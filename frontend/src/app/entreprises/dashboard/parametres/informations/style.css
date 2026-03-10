@@ -1,0 +1,287 @@
+.container {
+  display: flex;
+  min-height: 100vh;
+  font-family: Arial, sans-serif;
+}
+
+.container-dashbord {
+  display: flex;
+  margin-top: 0px;
+
+}
+
+.mainContent {
+  width: 100%;
+  padding-left: 17%;
+  padding-right: 50px;
+  min-height: 100vh;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.header h2 {
+  font-size: 18px;
+  color: #004aad;
+}
+
+.full-for-RichTextEditor {
+  gap: 0px !important;
+
+}
+
+.full-for-RichTextEditor span {
+  padding-bottom: 6px !important;
+}
+
+/* Main Content */
+.main {
+  flex: 1;
+  padding: 30px;
+  background-color: #fff;
+}
+
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+}
+
+.field label {
+  font-weight: bold;
+  margin-bottom: 6px;
+}
+
+.field input[type="text"],
+.subField textarea {
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 8px;
+  font-size: 14px;
+}
+
+.field input[type="file"] {
+  font-size: 14px;
+}
+
+.presentationBox {
+  border: 1px solid #ddd;
+  padding: 15px;
+  border-radius: 6px;
+  background: #fafafa;
+}
+
+.subField {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 12px;
+}
+
+.subField label {
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.labelMission {
+  color: #b33a3a;
+}
+
+.labelValeurs {
+  color: #b26d00;
+}
+
+textarea {
+  min-height: 70px;
+  resize: vertical;
+}
+
+.button {
+  background-color: #0070f3;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 18px;
+  font-size: 15px;
+  cursor: pointer;
+  align-self: flex-start;
+  transition: 0.2s;
+}
+
+.button:hover {
+  background-color: #0059c1;
+}
+
+
+.logoBox {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.logoPlaceholder {
+  width: 100px;
+  height: 100px;
+  border: 1px dashed #ccc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+  font-size: 13px;
+  border-radius: 6px;
+  background-color: #fafafa;
+}
+
+.logoPreview {
+  width: 100px;
+  height: 100px;
+  object-fit: contain;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  background: #fff;
+}
+
+.fileInput {
+  font-size: 13px;
+}
+
+/* Conteneur général KYC */
+.kyc-container {
+  max-width: 700px;
+  margin: 40px auto;
+  padding: 30px 25px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  color: #1f2937;
+}
+
+/* Titres */
+.kyc-container h1 {
+  text-align: center;
+  margin-bottom: 25px;
+  font-size: 28px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.kyc-container h2 {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  color: #111827;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 8px;
+}
+
+/* Étapes */
+.step {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+/* Inputs */
+.step input[type="text"],
+.step input[type="email"],
+.step input[type="file"],
+.step select {
+  padding: 10px 14px;
+  font-size: 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  outline: none;
+  transition: border 0.2s, box-shadow 0.2s;
+}
+
+.step input:focus,
+.step select:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+}
+
+/* Labels pour fichiers */
+.step label {
+  font-size: 14px;
+  font-weight: 500;
+  margin-top: 10px;
+}
+
+/* Prévisualisations */
+.step img {
+  margin-top: 8px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+/* Boutons */
+.step button {
+  margin-top: 20px;
+  padding: 12px 18px;
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  background-color: #2563eb;
+  color: #fff;
+  transition: background 0.2s;
+}
+
+.step button:hover {
+  background-color: #1e40af;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .kyc-container {
+    padding: 20px 15px;
+  }
+
+  .step input,
+  .step select {
+    font-size: 13px;
+  }
+
+  .step button {
+    font-size: 14px;
+  }
+}
+
+.kyc-box {
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  font-weight: 500;
+}
+
+.kyc-approved {
+  background-color: #e6f9ed;
+  color: #0a7a3e;
+}
+
+.kyc-pending,
+.kyc-submitted {
+  background-color: #fff4e5;
+  color: #b76e00;
+}
+
+.kyc-rejected {
+  background-color: #ffe5e5;
+  color: #b30000;
+}
+
+.kyc-not_submitted {
+  background-color: #f5f5f5;
+  color: #444;
+}

@@ -1,0 +1,29 @@
+/* Sidebar */
+.sidebar {
+  width: 15%;
+  height: 100vh;
+  background-color: #2d2d2d;
+  color: #fff;
+  padding: 20px 0;
+  position: fixed;          /* ✅ Rendre le sidebar fixe */
+  top: 0;
+  left: 0;        /* occupe toute la hauteur de l’écran */
+  overflow-y: auto;    
+}
+
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar li {
+  padding: 12px 20px;
+  cursor: pointer;
+  transition: background 0.2s;
+  font-size: 14px;
+}
+
+.sidebar li:hover {
+  background-color: #3d3d3d;
+}

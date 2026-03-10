@@ -1,0 +1,39 @@
+.lettre-page {
+  display: flex;
+}
+
+.lettre-content {
+  white-space: pre-line;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.lettre-container {
+  background: #fff;
+  padding: 20px;
+  border-radius: 6px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.lettre-content p {
+  line-height: 1.5;
+  font-size: 14px;
+}
+
+.btn-download {
+  padding: 8px 16px;
+  border: none;
+  background-color: #2b6cb0;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-download:hover {
+  background-color: #2c5282;
+}

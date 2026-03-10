@@ -1,0 +1,300 @@
+.recherche-ctn {
+    padding: 0.5rem 8%;
+}
+
+.container-dashbord {
+    display: flex;
+    margin-top: 0px;
+
+}
+
+.mainContent {
+    width: 100%;
+    padding-left: 17%;
+    padding-right: 50px;
+    min-height: 100vh;
+}
+
+.ctn-opp {
+    display: flex;
+    margin: 1rem 8%;
+}
+
+.ctn-opp .recherche-ctn,
+.ctn-opp .annonce-list-ctn {
+    padding: 0px !important;
+}
+
+
+.ctn-opp .annonce-list-ctn {
+    width: 100%;
+}
+
+.recherche-container {
+    width: 100%;
+    margin: auto;
+    padding: 10px 20px;
+    border: 2px solid #d8e7fd;
+    border-radius: 8px;
+    background: #fff;
+    font-family: Arial, sans-serif;
+}
+
+h3 {
+    color: #0046b8;
+    margin-bottom: 20px;
+}
+
+.field {
+    margin-bottom: 5px;
+    display: flex;
+}
+
+label {
+    width: 20%;
+    font-weight: bold;
+    margin-bottom: 6px;
+    padding-top: 7px;
+    font-size: 12px;
+}
+
+.field-data {
+    width: 80%;
+    height: 62px;
+    border: 1px solid #d8e7fd;
+}
+
+
+.action-ctn input,
+.action-ctn select {
+    height: 100%;
+    background: #e1e1e1;
+    border: 0px;
+    border-radius: 0px;
+    width: 100%;
+    padding: 1px;
+    font-size: 12px;
+}
+
+input:focus,
+select:focus {
+    outline: none;
+    border-color: #0046b8;
+}
+
+.tags {
+    width: 100%;
+    height: 50%;
+    padding: 3px;
+
+}
+
+.action-ctn {
+    width: 100%;
+    height: 50%;
+}
+
+
+.action-ctn button {
+    border: none;
+    background: #efefef;
+    border-radius: 0px;
+    height: 90%;
+    font-size: 14px;
+}
+
+.tag {
+    background: #e9f0ff;
+    color: #0046b8;
+    padding: 3px 10px;
+    border-radius: 16px;
+    font-size: 12px;
+    cursor: pointer;
+    margin: 5px !important;
+
+}
+
+.tag:hover {
+    background: #d0e1ff;
+}
+
+.field-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 25px;
+}
+
+.btn-primary {
+    background: #0046b8;
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.btn-secondary {
+    background: #f77f00;
+    color: white;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.btn-primary:hover {
+    background: #003a9c;
+}
+
+.btn-secondary:hover {
+    background: #e26f00;
+}
+
+
+.field-data {
+    display: flex;
+    gap: 0px !important;
+    flex-wrap: wrap;
+}
+
+
+.chip {
+    cursor: pointer;
+    background: #fff;
+    border: 1px solid #cfcfcf;
+    border-radius: 18px;
+    padding: 5px 12px;
+    font-size: 12px;
+    transition: all .12s;
+    height: fit-content;
+    margin-right: 5px;
+}
+
+.chip:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+.chip.active {
+    background: #0b62d6;
+    /* bleu sélection */
+    color: #fff;
+    border-color: transparent;
+}
+
+/* petit paragraphe d'intro */
+.intro {
+    margin-bottom: 12px;
+    color: #464646;
+    font-size: 14px;
+}
+
+
+.action-ctn input::placeholder {
+    color: #464646;
+    font-weight: 600;
+}
+
+
+.field-data-1 {
+    border: none !important;
+}
+
+.field-data-1-top {
+    height: auto !important;
+}
+
+.more-option-ctn {
+    margin-bottom: 5px;
+    display: flex;
+}
+
+.action-ctn select {
+    color: #464646;
+    font-weight: 600;
+}
+
+.more-option-label {
+    width: 20%;
+    text-align: end;
+    padding-right: 10px;
+    font-weight: 700;
+    color: blue;
+    font-size: 14px;
+}
+
+.more-option-sepa {
+    width: 80%;
+    background: red;
+    height: 5px;
+    margin: auto;
+}
+
+.field-data-ctn {
+    border: none;
+}
+
+.field-data-ctn input {
+    height: 31px;
+    padding: 10px;
+    width: 22%;
+}
+
+.ctn-periode {
+    width: 45%;
+}
+
+.ctn-periode span {
+    padding-right: 10px;
+    font-size: 12px;
+}
+
+.ctn-periode input {
+    height: 31px;
+    padding: 10px;
+    width: 200px;
+    font-size: 12px;
+}
+
+.field-data-ctn select {
+    width: 100%;
+    height: 36px;
+    padding: 5px;
+    font-size: 12px;
+}
+
+.recherche-ctn-txt {
+    padding: 0.5rem 8%;
+    font-size: 1.1rem;
+    margin: 0px;
+    margin-top: 11px;
+    color: blue;
+}
+
+.field-margin {
+    margin: 5px 0px;
+}
+
+.btn2 {
+    width: 30%;
+    font-size: 12px;
+    margin-right: 10px;
+}
+
+.annonce-list-ctn {
+    padding: 1rem 8%;
+}
+
+.page-title {
+    padding: 0.5rem 8%;
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin: 10px 0;
+    color: #111827;
+}

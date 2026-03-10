@@ -1,0 +1,81 @@
+.annonce-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.annonce-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 16px;
+  background: white;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  transition: transform 0.2s ease;
+  cursor: pointer;
+}
+
+.annonce-card:hover {
+  transform: translateY(-2px);
+}
+
+.annonce-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.status-annonce-liste {
+  background: #0ca14b;
+  color: white;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.reste {
+  color: #0078ff;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.titre {
+  font-size: 15px;
+  font-weight: 600;
+  color: #222;
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+
+.annonce-infos {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.annonce-infos label {
+  font-size: 13px;
+  color: #555;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.titreLink{
+    text-decoration: none;
+}
+.annonce-infos p {
+  margin: 2px 0 0 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #222;
+}
+
+.flag {
+  width: 18px;
+  height: 12px;
+  margin-right: 5px;
+  vertical-align: middle;
+  border-radius: 2px;
+}
+

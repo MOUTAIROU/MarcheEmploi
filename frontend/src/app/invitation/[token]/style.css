@@ -1,0 +1,133 @@
+/* ===== Page background ===== */
+body {
+    margin: 0;
+    background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+    font-family: Inter, system-ui, -apple-system, sans-serif;
+}
+
+/* ===== Container ===== */
+.invite-container {
+    max-width: 440px;
+    margin: 80px auto;
+    padding: 34px 32px 28px;
+    background: #ffffff;
+    border-radius: 14px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.08);
+    position: relative;
+}
+
+/* ===== Header ===== */
+.invite-container h2 {
+    margin: 0 0 6px;
+    font-size: 22px;
+    font-weight: 650;
+    color: #0f172a;
+}
+
+.invite-container p {
+    margin: 0 0 24px;
+    font-size: 14px;
+    color: #475569;
+}
+
+/* entreprise badge */
+.invite-container p b {
+    background: #eef2ff;
+    color: #3730a3;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-weight: 600;
+}
+
+/* ===== Labels ===== */
+.invite-container label {
+    display: block;
+    margin-top: 14px;
+    margin-bottom: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #334155;
+}
+
+/* ===== Inputs ===== */
+.invite-container input[type="text"],
+.invite-container input[type="password"] {
+    width: 100%;
+    padding: 11px 12px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    font-size: 14px;
+    transition: all 0.18s ease;
+}
+
+.invite-container input:focus {
+    background: #ffffff;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+    outline: none;
+}
+
+.invite-container input:disabled {
+    width: 100%;
+    padding: 11px 12px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    background: #f8fafc;
+    font-size: 14px;
+    transition: all 0.18s ease;
+}
+
+/* ===== Checkbox ===== */
+.terms {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 18px;
+    font-size: 13px;
+    color: #475569;
+}
+
+.terms input {
+    width: 16px;
+    height: 16px;
+    accent-color: #6366f1;
+    cursor: pointer;
+}
+
+/* ===== Button ===== */
+.invite-container .btn {
+    width: 100%;
+    margin-top: 22px;
+    padding: 12px;
+    border-radius: 10px;
+    border: none;
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.invite-container .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 20px rgba(79, 70, 229, 0.25);
+}
+
+/* ===== Loading / invalid ===== */
+.invite-container-loading,
+.invite-container-invalid {
+    text-align: center;
+    margin-top: 120px;
+    font-size: 15px;
+    color: #475569;
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 520px) {
+    .invite-container {
+        margin: 40px 14px;
+        padding: 26px 20px;
+    }
+}

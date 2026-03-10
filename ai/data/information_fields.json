@@ -1,0 +1,7 @@
+{
+  "Nom de famille": ["nom", "nom de famille", "nom de naissance"],
+  "Prénom": ["prénom", "prenom", "prénom usuel", "prénom légal"],
+  "Adresse e-mail": ["email", "adresse e-mail", "courriel"],
+  "Numéro de téléphone": ["téléphone", "numéro de téléphone", "tel"],
+  "Adresse": ["adresse", "résidence", "domicile"]
+}

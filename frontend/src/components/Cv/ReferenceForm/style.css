@@ -1,0 +1,169 @@
+/* --- Carte principale --- */
+.form-card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 20px;
+  background: #fff;
+  width: 100%;
+  margin: 1rem
+}
+
+/* --- En-tête --- */
+.form-header h3 {
+  margin: 0 0 10px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+/* --- Groupe de champ --- */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 12px;
+}
+
+.form-group label {
+  font-size: 14px;
+  color: #555;
+  margin-bottom: 5px;
+}
+
+.form-group input[type="text"],
+.form-group input[type="email"] {
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 8px;
+  font-size: 14px;
+  outline: none;
+}
+
+.form-group input:disabled {
+  background-color: #f5f5f5;
+  color: #888;
+  cursor: not-allowed;
+}
+
+/* --- Ligne à deux champs --- */
+.form-group-row {
+  display: flex;
+  gap: 10px;
+}
+
+.form-group-row .form-group {
+  flex: 1;
+}
+
+/* --- Options radio --- */
+.form-group input[type="radio"] {
+  margin-right: 6px;
+}
+
+.form-group label input[type="radio"] {
+  transform: translateY(2px);
+}
+
+.form-group label {
+  font-size: 14px;
+}
+
+/* --- Texte d'avertissement --- */
+.warning-text {
+  font-size: 13px;
+  color: #b94a00;
+  background: #fff7e6;
+  border: 1px solid #ffd699;
+  border-radius: 6px;
+  padding: 8px 10px;
+  margin-top: 8px;
+  line-height: 1.4;
+}
+
+/* --- Boutons --- */
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  margin-top: 12px;
+  gap: 8px;
+}
+
+.deleteBtn {
+  background: none;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.doneBtn {
+  background: #1a73e8;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 7px 14px;
+  cursor: pointer;
+}
+
+.doneBtn:hover {
+  background: #155fc4;
+}
+
+/* --- Bouton d'ajout en bas du formulaire --- */
+.add-reference-btn {
+  background: none;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.add-reference-btn:hover {
+  background: #f5f5f5;
+}
+
+.form-group-option{
+  padding: 10px 0px;   
+}
+
+.edit-btn {
+    background: #8b8b8b;
+    border: none;
+    border-radius: 4px;
+    margin: 0 10px;
+    padding: .4rem .6rem;
+    color: #ffffff;
+}
+
+.delete-btn {
+  background: #f8d7da;
+  color: #721c24;
+  border: none;
+  padding: 0.4rem 0.8rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.table-row-d{
+  border-bottom: 1px solid #cccccc;
+    width: 100%;
+    padding: 6px 0;
+    display: flex;
+    justify-content: space-between;
+}
+
+.table-row-d:first-child td{
+     display: flex;
+    justify-content: center;
+    align-items: center; 
+}
+
+.contacts-table{
+   margin-bottom: 10px;  
+   width: 100%; 
+}
