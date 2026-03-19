@@ -10,7 +10,7 @@ import "./style.css";
 import Sidebar from "@/components/SidebarEntreprises/page";
 import PopupError from '@/components/modale/Popup/PopupError/page'
 import PopupSuccess from '@/components/modale/Popup/PopupSuccess/page'
-
+import Pagination from "@/components/PaginationTap/Pagination";
 import api from "@/lib/axiosInstance";
 
 const actions = [
@@ -93,6 +93,11 @@ export default function OffresPage() {
     const [rowAction, setRowAction] = useState<ActionOption | null>(null);
     const [rowId, setRowId] = useState<string>("");
 
+    const [search, setSearch] = useState("");
+    const [page, setPage] = useState(1);
+    const [total, setTotal] = useState(0);
+    const limit = 10;
+
     const router = useRouter();
 
     const actionsGroupe = [
@@ -101,7 +106,33 @@ export default function OffresPage() {
 
 
     useEffect(() => {
-        getOffres();
+
+
+        // Cas 2 : recherche mais moins de 3 caractères
+        if (search && search.trim().length > 0 && search.trim().length < 3) return;
+
+        const timer = setTimeout(() => {
+
+            fetchOffres(search, selectedFilter, page);
+
+        }, 500);
+
+        return () => clearTimeout(timer);
+
+    }, [search, selectedFilter, page]);
+
+
+    useEffect(() => {
+
+        if (search.trim().length !== 0) return;
+
+        getOffres(page, limit);
+        
+    }, [page]);
+
+    useEffect(() => {
+
+        getOffres(page, limit);
 
         const handleClickOutside = (event: MouseEvent) => {
             const target = event.target as Node | null;
@@ -140,18 +171,50 @@ export default function OffresPage() {
     }, []);
 
 
+    const fetchOffres = async (searchValue: string, filterValue: string, pageNumber: number) => {
 
-    async function getOffres() {
+        try {
 
 
+            const res = await api.get("entreprise_get/mes_candidats_save_search", {
+                params: {
+                    search: searchValue,
+                    filter: filterValue,
+                    page: pageNumber,
+                    limit: 10
+                }
+            });
 
-        const response = await api.get("entreprise_get/mes_candidats_save");
+
+          
+            setOffreTab(res.data.data)
+
+            setTotal(res.data.total)
+           
+
+
+        } catch (error) {
+            console.error(error);
+        }
+
+    };
+
+    async function getOffres(pageNumber: number = 1, limit: number = 10) {
+
+        const response = await api.get("entreprise_get/mes_candidats_save", {
+            params: {
+                page: pageNumber,
+                limit: limit
+            }
+        });
 
         const { data, status } = response
 
         if (status == 201) {
 
             setOffreTab(data.data)
+
+            setTotal(data.total)
 
         }
 
@@ -359,7 +422,7 @@ export default function OffresPage() {
             let res = await api.delete(`/entreprise_get/delete_candidats_save_groupe/${selectedOffres}`);
 
             if (res.status == 201) {
-                //  getOffres()
+                  getOffres(page, limit)
             }
 
 
@@ -501,7 +564,7 @@ export default function OffresPage() {
                 let res = await api.delete(`/entreprise_get/delete_candidats_save/${rowId}`);
 
                 if (res.status == 201) {
-                    getOffres()
+                    getOffres(page, limit)
                 }
 
             }
@@ -521,8 +584,6 @@ export default function OffresPage() {
     const handleActionType = async (type: string, message: string, post_id: string,) => {
 
 
-        console.log(type, message, post_id)
-
         if (type === "notification") {
 
             let res = await api.patch(`/entreprise_get/send_candidat_notification_emploi_contact/${post_id}`, {
@@ -530,7 +591,7 @@ export default function OffresPage() {
             });
 
             if (res.status == 201) {
-                getOffres();
+                getOffres(page, limit);
 
             }
 
@@ -671,8 +732,14 @@ export default function OffresPage() {
                                 type="text"
                                 placeholder="Rechercher par titre / référence"
                                 className="search"
+                                value={search}
+                                onChange={(e) => {
+                                    setSearch(e.target.value);
+                                    setPage(1);
+                                }}
                             />
                             {/* === FILTRE === */}
+                            {/*
                             <div className="filterWrapper" ref={filterRef}>
                                 <button
                                     className="filter"
@@ -697,6 +764,8 @@ export default function OffresPage() {
                                     </div>
                                 )}
                             </div>
+
+                             */}
 
 
                             {/* === ACTIONS GROUPEES === */}
@@ -807,6 +876,12 @@ export default function OffresPage() {
                             </tbody>
 
                         </table>
+                        <Pagination
+                            page={page}
+                            setPage={setPage}
+                            total={total}
+                            limit={limit}
+                        />
 
 
                     </div>

@@ -24,7 +24,7 @@ const ActionModal: React.FC<ModalProps> = ({
     const [confirmationText, setConfirmationText] = useState("");
 
     // Texte exact à saisir
-    const requiredText = `Moi  ${name} je valide la suppression de mon compte sur marcheemploie.com`;
+    const requiredText = `Moi ${name} je valide la suppression de mon compte sur marcheemploie.com`;
 
     useEffect(() => {
         if (isOpen) setVisible(true);

@@ -16,24 +16,25 @@ module.exports = {
 
         return await repository.dashbord_starts(user_id)
     },
-    mes_appel_offre_save: async ({ user_id }) => {
+    mes_appel_offre_save: async (data) => {
 
-        return await repository.mes_appel_offre_save(user_id)
-
-    },
-    mes_candidats_save: async ({ user_id }) => {
-
-        return await repository.mes_candidats_save(user_id)
+        return await repository.mes_appel_offre_save(data)
 
     },
-    get_notification_preference: async ({ user_id }) => {
+    mes_candidats_save: async (data) => {
 
-        return await repository.get_notification_preference(user_id)
+        return await repository.mes_candidats_save(data)
 
     },
-    get_notification: async ({ user_id }) => {
+    mes_candidats_save_search: async (data) => {
 
-        return await repository.get_notification(user_id)
+        return await repository.mes_candidats_save_search(data)
+
+    },
+   
+    get_notification: async (data) => {
+
+        return await repository.get_notification(data)
 
     },
     user_infomation: async (data) => {
@@ -152,13 +153,17 @@ module.exports = {
 
 
 
-    all_qcm: async ({ user_id }) => {
+    all_qcm: async (data) => {
 
-        return await repository.all_qcm(user_id)
+        return await repository.all_qcm(data)
+
+    },
+    all_qcm_search: async (data) => {
+
+        return await repository.all_qcm_search(data)
 
     },
     ami_offres_by_post_id: async ({ user_id, params }) => {
-
 
         const data = {
             user_id, params
@@ -222,9 +227,14 @@ module.exports = {
         return await repository.get_qcm_by_post_id(user_id, data)
 
     },
-    entretiens: async ({ user_id, params }) => {
+    entretiens: async (data) => {
 
-        return await repository.entretiens(user_id)
+        return await repository.entretiens(data)
+
+    },
+    entretiens_search: async (data) => {
+
+        return await repository.entretiens_search(data)
 
     },
     get_entretiens_by_post_id: async ({ user_id, params }) => {
@@ -237,9 +247,14 @@ module.exports = {
         return await repository.get_entretiens_by_post_id(user_id, data)
 
     },
-    get_utilisateurs: async ({ user_id }) => {
+    get_utilisateurs: async (data) => {
 
-        return await repository.get_utilisateurs(user_id)
+        return await repository.get_utilisateurs(data)
+
+    },
+    get_utilisateurs_search: async (data) => {
+
+        return await repository.get_utilisateurs_search(data)
 
     },
     delete_offres: async (data) => {
@@ -258,9 +273,25 @@ module.exports = {
         return await repository.get_offre_by_post_id(data)
 
     },
+    get_offre_by_post_id_search: async (data) => {
+
+        return await repository.get_offre_by_post_id_search(data)
+
+    },
+
     search_offres: async (data) => {
 
         return await repository.search_offres(data)
+
+    },
+    mes_condidatures_search_offres: async (data) => {
+
+        return await repository.mes_condidatures_search_offres(data)
+
+    },
+    mes_appel_offre_save_search: async (data) => {
+
+        return await repository.mes_appel_offre_save_search(data)
 
     },
     ajouter_offre_qcm: async (data) => {
@@ -282,6 +313,11 @@ module.exports = {
     qcm_candidats_all: async (data) => {
 
         return await repository.qcm_candidats_all(data)
+
+    },
+    qcm_candidats_all_search: async (data) => {
+
+        return await repository.qcm_candidats_all_search(data)
 
     },
     detete_qcm_by_candidats: async (data) => {
@@ -408,7 +444,7 @@ module.exports = {
 
     },
 
-    
+
 
 
 

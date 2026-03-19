@@ -2,12 +2,34 @@ const { cp } = require("fs");
 const repository = require("./user.repository");
 const path = require("path");
 module.exports = {
-    cand_profile: async ({ username, nom, prenom, tel, email, filenameBase, user_id,activite,infos,specialisation }) => {
+    get_cand_parametre_info: async (data) => {
+
+        return await repository.get_cand_parametre_info(data)
+    },
+
+    get_user_data: async (data) => {
+
+        return await repository.get_user_data(data)
+    },
+
+    
+    delete_user: async (data) => {
+
+        return await repository.delete_user(data)
+    },
+
+    
+    cand_parametre_info: async (data) => {
+
+        return await repository.cand_parametre_info(data)
+    },
+    
+    cand_profile: async ({ username, nom, prenom, tel, email, filenameBase, user_id, activite, infos, specialisation }) => {
 
 
-      
-       const {photo_profil} = filenameBase
-   
+
+        const { photo_profil } = filenameBase
+
 
         const profileData = {
             user_id: user_id,
@@ -15,14 +37,14 @@ module.exports = {
             nom: nom,
             prenom: prenom,
             email: email,
-            activite:activite,
-            infos:infos,
-            specialisation:specialisation,
+            activite: activite,
+            infos: infos,
+            specialisation: specialisation,
             tel: tel,
             filenameBase: formatFilenameBase(photo_profil),
         };
 
-        
+
 
         const trouver_profile = await repository.foundProfil(user_id)
 
@@ -49,41 +71,15 @@ module.exports = {
 
 
     },
-    cand_preferences: async ({user_id, settings}) => {
+    cand_preferences: async (data) => {
+              
+        console.log('toto')
+
+     //   return await repository.cand_preferences(data)
         
 
-
-        const profileData = {
-            user_id: user_id,
-            settings
-        };
-
-    
-
-        const trouver_profile = await repository.foundPreferences(user_id)
-
-  
-
-        if (trouver_profile) {
-
-            const newUser = await repository.updatePreferences(profileData);
-
-            return {
-                newUser,
-            };
-
-        } else {
-            // Création de l'utilisateur
-            const newUser = await repository.createPreferences(profileData);
-
-            return {
-                newUser,
-            };
-
-        }
-
     },
-    cand_profile_settings: async ({user_id, visibleProfil, contactDirect, publicProfil, displayBio, displaySkills, displayExperience, showCV, openToWork  }) => {
+    cand_profile_settings: async ({ user_id, visibleProfil, contactDirect, publicProfil, displayBio, displaySkills, displayExperience, showCV, openToWork }) => {
 
 
         const profileData = {
@@ -122,25 +118,25 @@ module.exports = {
         }
 
     },
-    get_cand_profile: async ({ user_id })=>{
+    get_cand_profile: async ({ user_id }) => {
 
         return await repository.getCandProfile(user_id)
     },
-    get_cand_preferences: async ({ user_id })=>{
+    get_cand_preferences: async ({ user_id }) => {
 
         return await repository.get_cand_preferences(user_id)
     },
-    get_cand_profile_settings: async ({ user_id })=>{
+    get_cand_profile_settings: async ({ user_id }) => {
 
         return await repository.get_cand_profile_settings(user_id)
     },
 
-   get_presentatation_public: async ({ user_id })=>{
+    get_presentatation_public: async ({ user_id }) => {
 
         return await repository.get_presentatation_public(user_id)
     },
 
-    
+
 };
 
 

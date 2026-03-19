@@ -6,7 +6,34 @@ exports.annonce_post_id = async (req, res) => {
 
         console.log("xxx", req.userId)
 
-        const result = await service.annonce_post_id({ user_id: req.userId });
+        const { page, limit } = req.query
+
+        const result = await service.annonce_post_id({ user_id: req.userId, page, limit });
+
+        res.status(201).json(result);
+
+    } catch (error) {
+        res.status(500).json({ error: "Erreur interne" });
+    }
+};
+
+
+exports.annonce_post_id_search = async (req, res) => {
+    try {
+
+        const { search, filter, page, limit } = req.query
+
+        // 🔹 récupérer le filtre correctement
+        let filterValues = [];
+
+        if (Array.isArray(req.query['filter[]'])) {
+            filterValues = req.query['filter[]'];
+        } else if (typeof req.query['filter[]'] === 'string') {
+            filterValues = [req.query['filter[]']];
+        }
+
+
+        const result = await service.annonce_post_id_search({ user_id: req.userId, search, filter: filterValues, page, limit });
 
         res.status(201).json(result);
 
@@ -18,9 +45,10 @@ exports.annonce_post_id = async (req, res) => {
 exports.entretien = async (req, res) => {
     try {
 
-        console.log("xxx", req.userId)
 
-        const result = await service.entretien({ user_id: req.userId });
+        const { page, limit } = req.query
+
+        const result = await service.entretien({ user_id: req.userId,page, limit });
 
         res.status(201).json(result);
 
@@ -28,6 +56,21 @@ exports.entretien = async (req, res) => {
         res.status(500).json({ error: "Erreur interne" });
     }
 };
+
+exports.dashbord_starts = async (req, res) => {
+    try {
+
+
+        const result = await service.dashbord_starts({ user_id: req.userId });
+
+        res.status(201).json(result);
+
+    } catch (error) {
+        res.status(500).json({ error: "Erreur interne" });
+    }
+};
+
+
 
 
 
@@ -104,9 +147,33 @@ exports.entretien_status_groupe = async (req, res) => {
 exports.all_qcm = async (req, res) => {
     try {
 
-        console.log("xxx", req.userId)
+        const { page, limit } = req.query
 
-        const result = await service.all_qcm({ user_id: req.userId });
+        const result = await service.all_qcm({ user_id: req.userId, page, limit });
+
+        res.status(201).json(result);
+
+    } catch (error) {
+        res.status(500).json({ error: "Erreur interne" });
+    }
+};
+
+exports.all_qcm_search = async (req, res) => {
+    try {
+
+        const { search, filter, page, limit } = req.query
+
+        // 🔹 récupérer le filtre correctement
+        let filterValues = [];
+
+        if (Array.isArray(req.query['filter[]'])) {
+            filterValues = req.query['filter[]'];
+        } else if (typeof req.query['filter[]'] === 'string') {
+            filterValues = [req.query['filter[]']];
+        }
+
+
+        const result = await service.all_qcm_search({ user_id: req.userId, search, filter: filterValues, page, limit });
 
         res.status(201).json(result);
 
@@ -182,11 +249,33 @@ exports.entretien_detail = async (req, res) => {
 exports.mes_appel_offre_save = async (req, res) => {
     try {
 
-        const { params } = req.params;
+        const { page, limit } = req.query
 
-        console.log({ user_id: req.userId })
+        const result = await service.mes_appel_offre_save({ user_id: req.userId, page, limit });
 
-        const result = await service.mes_appel_offre_save({ user_id: req.userId });
+        res.status(201).json(result);
+
+    } catch (error) {
+        res.status(500).json({ error: "Erreur interne" });
+    }
+};
+
+exports.mes_appel_offre_save_search = async (req, res) => {
+    try {
+
+        const { search, filter, page, limit } = req.query
+
+        // 🔹 récupérer le filtre correctement
+        let filterValues = [];
+
+        if (Array.isArray(req.query['filter[]'])) {
+            filterValues = req.query['filter[]'];
+        } else if (typeof req.query['filter[]'] === 'string') {
+            filterValues = [req.query['filter[]']];
+        }
+
+
+        const result = await service.mes_appel_offre_save_search({ user_id: req.userId, search, filter: filterValues, page, limit });
 
         res.status(201).json(result);
 

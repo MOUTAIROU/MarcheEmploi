@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
 import "./style.css";
-import Sidebar from "@/components/SidebarEntreprises/page";
+import Sidebar from "@/components/Sidebar/page";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import PopupError from '@/components/modale/Popup/PopupError/page'

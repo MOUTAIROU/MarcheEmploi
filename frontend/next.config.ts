@@ -4,10 +4,6 @@ const nextConfig: NextConfig = {
   /* config options here */
   reactStrictMode: true, // actif une seule fois
   trailingSlash: false,
-  eslint: {
-    ignoreDuringBuilds: true, // utile pour les builds prod si tu valides via GitHub Actions
-  },
-
   env: {
     SERVER_HOST: 'http://192.168.100.7:4000',
     SERVER_CV: 'http://192.168.100.7:8000',
@@ -29,7 +25,9 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'info.lund.fullrencontre.fr',
       },
+     
     ],
+     unoptimized: true
   },
   allowedDevOrigins: [
     'http://192.168.100.7:4000', // autoriser le backend

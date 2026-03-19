@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
 import "./style.css";
-import Sidebar from "@/components/SidebarEntreprises/page";
+import Sidebar from "@/components/Sidebar/page";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import ActionGrouperModalQcmEmploi from '@/components/modale/ActionGrouperModalQcmEmploi/page'
@@ -9,6 +9,9 @@ import PopupError from '@/components/modale/Popup/PopupError/page'
 import ActionModalQcmEmploi from '@/components/modale/ActionModalQcmEmploi/page'
 import api from "@/lib/axiosInstance";
 import { getCategorieLabel, country, countryCode } from "@/utils/types";
+import Pagination from "@/components/PaginationTap/Pagination";
+import PopupSuccess from '@/components/modale/Popup/PopupSuccess/page'
+
 
 
 type QcmStatut =
@@ -100,7 +103,6 @@ export default function OffresPage() {
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [selectedOffres, setSelectedOffres] = useState<string[]>([]);
     const [isError, setError] = useState(false);
-    const [isErrorMsg, setErrorMsg] = useState<string>("");
     const [currentAction, setCurrentAction] = useState<string>("");
     const [isOpen, setIsOpen] = useState(false);
 
@@ -113,6 +115,17 @@ export default function OffresPage() {
     const groupRef = useRef<HTMLDivElement>(null);
     const rowMenuRef = useRef<HTMLDivElement>(null);
     const router = useRouter();
+
+    const [search, setSearch] = useState("");
+    const [page, setPage] = useState(1);
+    const [total, setTotal] = useState(0);
+    const limit = 10;
+
+    const [errorMsg, setErrorMsg] = useState("");
+    const [successMsg, setSuccessMsg] = useState("");
+    const [showError, setShowError] = useState(false);
+    const [showSuccess, setShowSuccess] = useState(false);
+
 
 
     useEffect(() => {
@@ -145,21 +158,76 @@ export default function OffresPage() {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
+    useEffect(() => {
+
+
+        // Cas 2 : recherche mais moins de 3 caractères
+        if (search && search.trim().length > 0 && search.trim().length < 3) return;
+
+        const timer = setTimeout(() => {
+
+            fetchOffres(search, selectedFilter, page);
+
+        }, 500);
+
+        return () => clearTimeout(timer);
+
+    }, [search, selectedFilter, page]);
+
+
+    useEffect(() => {
+
+        if (search.trim().length !== 0) return;
+
+        getOffres(page, limit);
+    }, [page]);
 
 
 
 
+    const fetchOffres = async (searchValue: string, filterValue: string, pageNumber: number) => {
 
-    async function getOffres() {
-        const response = await api.get("candidats/all_qcm");
+        try {
+
+
+            const res = await api.get("candidats/all_qcm_search", {
+                params: {
+                    search: searchValue,
+                    filter: filterValue,
+                    page: pageNumber,
+                    limit: 10
+                }
+            });
+
+
+            setQcmTab(res.data.data)
+
+            setTotal(res.data.total)
+
+
+        } catch (error) {
+            console.error(error);
+        }
+
+    };
+
+
+    async function getOffres(pageNumber: number = 1, limit: number = 10) {
+        const response = await api.get("candidats/all_qcm", {
+            params: {
+                page: pageNumber,
+                limit: limit
+            }
+        });
 
         const { data, status } = response
 
         if (status == 201) {
 
-            console.log(data.data)
 
             setQcmTab(data.data)
+
+            setTotal(data.total)
 
         }
 
@@ -174,7 +242,7 @@ export default function OffresPage() {
     const handleGroupAction = (action: string) => {
         if (selectedOffres.length === 0) {
             setError(true)
-            setErrorMsg("Veuillez sélectionner au moins une offre.")
+            setSuccessMsg("Veuillez sélectionner au moins une offre.")
             return;
         }
 
@@ -186,12 +254,6 @@ export default function OffresPage() {
             return;
         }
 
-
-
-        // Pour les autres actions (supprimer, mettre hors ligne, etc.)
-        //  alert(`Action ${action} appliquée sur : ${selectedOffres.join(", ")}`);
-
-        // Pour toutes les autres actions → ouvrir le modal
         setCurrentAction(action);
         setIsOpen(true);
     };
@@ -211,21 +273,21 @@ export default function OffresPage() {
 
 
         if (offre.statut_label == "✅ Terminé") {
-            alert(
-                "🔒 Examen Terminer\n\n" +
+
+            setError(true)
+            setSuccessMsg("🔒 Examen Terminer\n\n" +
                 "Cet examen n’est pas encore ouvert ou est déjà fermé.\n" +
-                "Veuillez respecter la période définie par le recruteur."
-            );
+                "Veuillez respecter la période définie par le recruteur.")
             return; // ⛔ STOP ici
         }
 
 
         if (action === "▶️ Passer l’examen" && ouverture.status === "PENDING" || ouverture.status === "CLOSED") {
-            alert(
-                "🔒 Examen non disponible\n\n" +
+
+            setError(true)
+            setSuccessMsg("🔒 Examen non disponible\n\n" +
                 "Cet examen n’est pas encore ouvert ou est déjà fermé.\n" +
-                "Veuillez respecter la période définie par le recruteur."
-            );
+                "Veuillez respecter la période définie par le recruteur.")
             return; // ⛔ STOP ici
         }
 
@@ -430,12 +492,21 @@ export default function OffresPage() {
                             onConfirm={(payload) => applyRowAction(payload)}
                         />
 
-                        {isError && (
+                        {showError && (
                             <PopupError
-                                isOpen={isError}
+                                isOpen={showError}
                                 title="Erreur"
-                                message={isErrorMsg}
-                                onClose={() => setError(false)}
+                                message={errorMsg}
+                                onClose={() => setShowError(false)}
+                            />
+                        )}
+
+                        {showSuccess && (
+                            <PopupSuccess
+                                isOpen={showSuccess}
+                                title="Success"
+                                message={successMsg}
+                                onClose={() => setShowSuccess(false)}
                             />
                         )}
 
@@ -455,32 +526,13 @@ export default function OffresPage() {
                                 type="text"
                                 placeholder="Rechercher par titre / référence"
                                 className="search"
+                                value={search}
+                                onChange={(e) => {
+                                    setSearch(e.target.value);
+                                    setPage(1);
+                                }}
                             />
-                            {/* === FILTRE === */}
-                            <div className="filterWrapper" ref={filterRef}>
-                                <button
-                                    className="filter"
-                                    onClick={() => setFilterOpen(!isFilterOpen)}
-                                >
-                                    {selectedFilter}
-                                </button>
 
-                                {isFilterOpen && (
-                                    <div className="dropdown">
-                                        {["Filtre", "Catégorie / Domaine", "Durée", "Date de création", "Nombre d’offres associées", "Scores"].map(
-                                            (option) => (
-                                                <div
-                                                    key={option}
-                                                    className="dropdownItem"
-                                                    onClick={() => handleSelect(option)}
-                                                >
-                                                    {option}
-                                                </div>
-                                            )
-                                        )}
-                                    </div>
-                                )}
-                            </div>
 
 
                             {/* === ACTIONS GROUPEES === */}
@@ -596,6 +648,13 @@ export default function OffresPage() {
                                 ))}
                             </tbody>
                         </table>
+
+                        <Pagination
+                            page={page}
+                            setPage={setPage}
+                            total={total}
+                            limit={limit}
+                        />
 
 
 

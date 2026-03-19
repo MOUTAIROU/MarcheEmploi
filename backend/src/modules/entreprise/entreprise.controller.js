@@ -380,11 +380,9 @@ exports.notification_preference = async (req, res) => {
 
     try {
 
+        const { enabled, email, internal } = req.body.settings;
 
-        const { candidat_postule, qcm_termine, entretien_programme, countryCode, rappel_entretien, offre_expiree, facture } = req.body.settings;
-
-
-        const result = await service.notification_preference({ user_id: req.userId, countryCode, candidat_postule, qcm_termine, entretien_programme, rappel_entretien, offre_expiree, facture });
+        const result = await service.notification_preference({ user_id: req.userId, enabled, email, internal });
 
         res.status(201).json(result);
 

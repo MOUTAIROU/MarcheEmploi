@@ -15,6 +15,8 @@ export default function Pagination({
   itemsPerPage = 12,
   basePath = "",
 }: PaginationProps) {
+
+
   const totalPages = Math.ceil(totalItems / itemsPerPage);
 
   if (totalPages <= 1) return null;

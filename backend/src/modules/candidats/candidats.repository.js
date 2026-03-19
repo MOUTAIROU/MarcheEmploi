@@ -1,5 +1,6 @@
 const { Op } = require("sequelize");
-
+const sequelize = require("../../config/database"); // chemin de ton fichier
+const { Sequelize } = require('sequelize'); // si Node.js CommonJS
 const OffreEmploi = require("../models/offreEmploi");
 const AppelOffre = require("../models/appelOffre");
 const ExamenQcm = require("../models/ExamenQcm");
@@ -22,7 +23,7 @@ const QcmOffres = require("../models/QcmOffres");
 const QcmCandidats = require("../models/QcmCandidats");
 const Notification = require("../models/Notification");
 const QcmExamensCandidats = require("../models/QcmExamensCandidats");
-
+const CandParametre = require("../models/CandParametre");
 const { createOrUpdateNotification } = require("../notification/notification.service");
 const { title } = require("process");
 const { STATUS_NOTIFICATION_MAP } = require('../../../utils/helper')
@@ -43,33 +44,74 @@ const excludedStatus = ["delete", "expire"];
 module.exports = {
 
     // Récupérer toutes les offres d'un utilisateur
-    annonce_post_id: async (user_id) => {
+    annonce_post_id: async (data) => {
         try {
+
+            console.log(data)
+
+            const { user_id, page, limit } = data
+
             if (!user_id) throw new Error("user_id manquant");
+
+            const offset = (parseInt(page) - 1) * parseInt(limit);
+
+
 
 
             // 1️⃣ Récupérer toutes les postulations
-            const postulationsOffres = await PostulationAnnonceOffreEmploi.findAll({
-                where: {
-                    user_id,
-                    statut: {
-                        [Op.notIn]: ["DELETED_BY_COMPANY", "DELETED_BY_CANDIDAT"]
-                    }
-                },
-                raw: true,
-            });
+            const allOffers = await sequelize.query(
+                `
+                    SELECT *
+                    FROM (
+                    SELECT id, annonce_id, user_id, statut, tab_notification, createdAt
+                    FROM postulation_annonces_offre_emploi
+                    WHERE user_id = :user_id
+                    AND statut NOT IN ('DELETED_BY_COMPANY', 'DELETED_BY_CANDIDAT')
+                    UNION ALL
+                    SELECT id, annonce_id, user_id, statut, tab_notification, createdAt
+                    FROM postulation_appel_offre
+                    WHERE user_id = :user_id
+                    AND statut NOT IN ('DELETED_BY_COMPANY', 'DELETED_BY_CANDIDAT')
+                    ) AS combined
+                    ORDER BY createdAt DESC
+                    LIMIT :limit OFFSET :offset
+                `,
+                {
+                    replacements: {
+                        user_id,
+                        limit: Number(limit),
+                        offset: Number(offset),
+                    },
+                    type: Sequelize.QueryTypes.SELECT,
+                }
+            );
 
-            const postulationsAppels = await PostulationAppelOffre.findAll({
-                where: {
-                    user_id,
-                    statut: {
-                        [Op.notIn]: ["DELETED_BY_COMPANY", "DELETED_BY_CANDIDAT"]
-                    }
-                },
-                raw: true,
-            });
 
-            const allOffers = [...postulationsOffres, ...postulationsAppels];
+            const totalResult = await sequelize.query(
+                `
+                    SELECT COUNT(*) AS total
+                    FROM (
+                    SELECT id
+                    FROM postulation_annonces_offre_emploi
+                    WHERE user_id = :user_id
+                    AND statut NOT IN ('DELETED_BY_COMPANY', 'DELETED_BY_CANDIDAT')
+                    UNION ALL
+                    SELECT id
+                    FROM postulation_appel_offre
+                    WHERE user_id = :user_id
+                    AND statut NOT IN ('DELETED_BY_COMPANY', 'DELETED_BY_CANDIDAT')
+                    ) AS combined
+                `,
+                {
+                    replacements: { user_id },
+                    type: Sequelize.QueryTypes.SELECT,
+                }
+            );
+
+            // totalResult est un tableau, on prend totalResult[0].total
+            const total = totalResult[0].total;
+
+            console.log("Total postulations:", total);
 
             // 2️⃣ Enrichir chaque annonce
             const enrichedOffers = await Promise.all(
@@ -116,7 +158,7 @@ module.exports = {
 
             return {
                 status: "success",
-                total: cleanData.length,
+                total: total,
                 data: cleanData,
             };
 
@@ -125,6 +167,299 @@ module.exports = {
             return {
                 status: "error",
                 message: err.message,
+            };
+        }
+    },
+    annonce_post_id_search: async (data) => {
+        try {
+
+
+            const { user_id, search = "", filter = [], page = 1, limit = 10 } = data;
+
+            if (!user_id) throw new Error("user_id manquant");
+
+            const offset = (Number(page) - 1) * Number(limit);
+            const excludedStatuts = ["DELETED_BY_COMPANY", "DELETED_BY_CANDIDAT"];
+            const filterQuery = filter.length > 0 ? filter : null;
+            const searchQuery = search ? `%${search}%` : null;
+
+            // 🔹 Requête principale avec recherche et pagination
+            const postulations = await sequelize.query(
+                `
+            SELECT p.id, p.user_id, p.annonce_id, 'offre' AS source,
+                   a.objet AS annonce_objet, a.lieu AS ville,
+                   p.statut, p.tab_notification, p.metadata, p.createdAt, p.updatedAt
+            FROM postulation_annonces_offre_emploi p
+            JOIN offres_emploi a ON p.annonce_id = a.post_id
+            WHERE p.user_id = :user_id
+              AND p.statut NOT IN (:excludedStatuts)
+              ${filterQuery ? "AND p.statut IN (:filterQuery)" : ""}
+              ${searchQuery ? "AND a.objet LIKE :search" : ""}
+
+            UNION ALL
+
+            SELECT p.id, p.user_id, p.annonce_id, 'appel' AS source,
+                   a.objet AS annonce_objet, a.lieu AS ville,
+                   p.statut, p.tab_notification, p.metadata, p.createdAt, p.updatedAt
+            FROM postulation_appel_offre p
+            JOIN (
+              SELECT post_id, objet, lieu FROM appel_offres
+              UNION ALL
+              SELECT post_id, objet, lieu FROM appel_offres_ami
+              UNION ALL
+              SELECT post_id, objet, lieu FROM appel_offres_consultation
+              UNION ALL
+              SELECT post_id, objet, lieu FROM appel_offres_recrutement_consultant
+            ) a ON p.annonce_id = a.post_id
+            WHERE p.user_id = :user_id
+              AND p.statut NOT IN (:excludedStatuts)
+              ${filterQuery ? "AND p.statut IN (:filterQuery)" : ""}
+              ${searchQuery ? "AND a.objet LIKE :search" : ""}
+
+            ORDER BY createdAt DESC
+            LIMIT :limit OFFSET :offset;
+            `,
+                {
+                    replacements: {
+                        user_id,
+                        excludedStatuts,
+                        filterQuery,
+                        search: searchQuery,
+                        limit: Number(limit),
+                        offset: Number(offset)
+                    },
+                    type: Sequelize.QueryTypes.SELECT
+                }
+            );
+
+            // 🔹 Requête pour obtenir le total des résultats (sans pagination)
+            const totalResult = await sequelize.query(
+                `
+            SELECT COUNT(*) AS total
+            FROM (
+                SELECT p.id
+                FROM postulation_annonces_offre_emploi p
+                JOIN offres_emploi a ON p.annonce_id = a.post_id
+                WHERE p.user_id = :user_id
+                  AND p.statut NOT IN (:excludedStatuts)
+                  ${filterQuery ? "AND p.statut IN (:filterQuery)" : ""}
+                  ${searchQuery ? "AND a.objet LIKE :search" : ""}
+
+                UNION ALL
+
+                SELECT p.id
+                FROM postulation_appel_offre p
+                JOIN (
+                  SELECT post_id, objet, lieu FROM appel_offres
+                  UNION ALL
+                  SELECT post_id, objet, lieu FROM appel_offres_ami
+                  UNION ALL
+                  SELECT post_id, objet, lieu FROM appel_offres_consultation
+                  UNION ALL
+                  SELECT post_id, objet, lieu FROM appel_offres_recrutement_consultant
+                ) a ON p.annonce_id = a.post_id
+                WHERE p.user_id = :user_id
+                  AND p.statut NOT IN (:excludedStatuts)
+                  ${filterQuery ? "AND p.statut IN (:filterQuery)" : ""}
+                  ${searchQuery ? "AND a.objet LIKE :search" : ""}
+            ) AS combined;
+            `,
+                {
+                    replacements: {
+                        user_id,
+                        excludedStatuts,
+                        filterQuery,
+                        search: searchQuery
+                    },
+                    type: Sequelize.QueryTypes.SELECT
+                }
+            );
+
+            const total = totalResult[0].total;
+
+
+
+            // 2️⃣ Enrichir chaque annonce
+            const enrichedOffers = await Promise.all(
+                postulations.map(async (postulation) => {
+
+                    const annonce_id = postulation.annonce_id;
+
+                    // 🔹 Infos annonce
+                    const annonce_info = await getEntrepriseIDbyAnnonceID(annonce_id);
+
+                    if (!annonce_info) return null;
+
+                    // 🔹 Infos entreprise
+                    const entreprise_info = await getCandidatinfo(annonce_info.entreprise_id);
+
+                    // 🔹 Compter les annonces non lues dans tab_annonce
+                    const tabAnnonce = Array.isArray(postulation.tab_notification)
+                        ? postulation.tab_notification
+                        : [];
+
+                    const unread_count = tabAnnonce.filter(
+                        (item) => item.is_read === false
+                    ).length;
+
+                    return {
+                        postulation_id: postulation.id,
+                        createdAt: postulation.createdAt,
+                        ville: annonce_info.ville,
+                        type: annonce_info.source,
+                        annonce_id,
+                        tabAnnonce,
+                        statut: postulation.statut,
+                        unread_annonce_count: unread_count,
+                        offre_title: annonce_info.title,
+                        entreprise_nom: entreprise_info.nom,
+                    };
+                })
+            );
+
+
+            // Nettoyer les null (au cas où une annonce a été supprimée)
+            const cleanData = enrichedOffers.filter(Boolean);
+
+
+            return {
+                status: "success",
+                total: total,
+                data: cleanData,
+            };
+
+
+        } catch (err) {
+            console.error("Erreur annonce_post_id:", err);
+            return {
+                status: "error",
+                message: err.message,
+            };
+        }
+    },
+
+
+    dashbord_starts: async (user_id) => {
+        try {
+
+            console.log(user_id)
+            if (!user_id) {
+                return {
+                    status: "error",
+                    message: "Paramètres manquants"
+                };
+            }
+
+
+
+
+            // ======================
+            // 📄 CANDIDATURES
+            // ======================
+
+
+            const whereClause = {
+                user_id,
+                statut: { [Op.notIn]: ["DELETED_BY_COMPANY", "DELETED_BY_CANDIDAT", "delete"] }
+            };
+
+            const [countOffreEmploi, countAppelOffre] = await Promise.all([
+                PostulationAnnonceOffreEmploi.count({
+                    where: whereClause
+                }),
+
+                PostulationAppelOffre.count({
+                    where: whereClause
+                })
+            ]);
+
+
+
+
+            const totalCandidatures = countOffreEmploi + countAppelOffre;
+
+            console.log("totalCandidatures", totalCandidatures)
+
+            // ======================
+            // 🧪 QCM
+            // ======================
+            const totalQcm = await QcmCandidats.count({
+                where: { candidat_id: user_id }
+            });
+
+            // ======================
+            // 🔔 NOTIFICATIONS
+            // ======================
+
+            const totalEntretien = await EntretienCandidat.count({
+                where: { candidat_id: user_id }
+            });
+
+            console.log("totalEntretien", totalEntretien)
+
+
+            // ======================
+            // 🔔 NOTIFICATIONS
+            // ======================
+            const [totalNonLus, derniersMessages] = await Promise.all([
+                Notification.count({
+                    where: { receiver_id: user_id, is_read: 0 }
+                }),
+                Notification.findAll({
+                    where: { receiver_id: user_id },
+                    order: [["createdAt", "DESC"]],
+                    limit: 5,
+                    raw: true
+                })
+            ]);
+
+
+            const get_info = await CandParametre.findOne({
+                where: { user_id },
+                attributes: ['photo_profil'],
+                raw: true
+            });
+
+            console.log(get_info)
+
+            const user_info = await getCandidatinfo(user_id)
+
+            const messages = derniersMessages.map(n => ({
+                id: n.id,
+                sender_id: n.sender_id,
+                is_read: n.is_read,
+                message: n.data?.messages?.slice(-1)[0] || null,
+                date: n.createdAt
+            }));
+
+            // ======================
+            // ✅ RESPONSE FRONTEND
+            // ======================
+
+
+            return {
+                status: "success",
+                data: {
+                    profile: {
+                        logo: get_info?.photo_profil || null,
+                        nom: user_info.nom
+                    },
+                    stats: {
+                        totalEntretien: totalEntretien || 0,
+                        candidatures_total: totalCandidatures || 0,
+                        qcm_total: totalQcm || 0,
+                        notifications_non_lues: totalNonLus || 0,
+
+                    },
+                    derniers_messages: messages
+                }
+            };
+
+        } catch (err) {
+            console.error("Erreur dashboard:", err);
+            return {
+                status: "error",
+                message: "Erreur serveur"
             };
         }
     },
@@ -379,51 +714,93 @@ module.exports = {
 
     mes_appel_offre_save: async (data) => {
         try {
-            const { user_id } = data;
+            const { user_id, page = 1, limit = 10 } = data;
 
-            if (!user_id) {
-                return {
-                    status: "error",
-                    message: "Paramètres manquants",
-                };
-            }
+            if (!user_id) throw new Error("user_id manquant");
 
-            // 1️⃣ Récupérer toutes les annonces sauvegardées par l'utilisateur
-            const annonces = await SaveAnnonce.findAll({
-                where: { user_id },
+            const offset = (page - 1) * limit;
+
+            const { rows: get_offre, count: total } = await SaveAnnonce.findAndCountAll({
+                where: { user_id }, // simple valeur
                 order: [["createdAt", "DESC"]],
+                limit: Number(limit),
+                offset: Number(offset),
+                raw: true
             });
 
-            // 2️⃣ Aucune annonce sauvegardée
-            if (!annonces || annonces.length === 0) {
-                return {
-                    status: "info",
-                    data: [],
-                    message: "Aucune annonce enregistrée",
-                };
-            }
+            const dataWithVille = await Promise.all(
+                get_offre.map(async (item) => {
+                    const villeInfo = await getVilleByAnnonceID(item.post_id);
+                    return {
+                        ...item,
+                        ville: villeInfo?.ville || null,
+                    };
+                })
+            );
 
-            console.log(annonces)
-
-            // 3️⃣ Succès
             return {
                 status: "success",
-                data: annonces,
-                total: annonces.length,
-                message: "Annonces enregistrées récupérées avec succès",
+                total,
+                data: dataWithVille,
             };
 
         } catch (err) {
-            console.error("Erreur mes_appel_offre_save:", err);
-            return {
-                status: "error",
-                message: err.message,
-            };
+            console.error("Erreur saveAppelOffre:", err);
+            throw err;
         }
     },
+    mes_appel_offre_save_search: async (data) => {
+        try {
+            const { user_id, search = "", filter = [], page = 1, limit = 10 } = data;
+
+            if (!user_id) throw new Error("user_id manquant");
+
+            const offset = (page - 1) * limit;
+
+            // 🔹 Construire le where dynamique
+            const whereClause = { user_id };
+
+            // 🔹 Si un filtre de statut existe
+            if (filter.length > 0) {
+                whereClause.statut = filter;
+            }
+
+            // 🔹 Pour la recherche, on doit passer par un include sur l'annonce
+            const { rows: get_offre, count: total } = await SaveAnnonce.findAndCountAll({
+                where: {
+                    user_id,
+                    ...(filter.length > 0 ? { statut: filter } : {}), // filtre si présent
+                    ...(search ? { titre: { [Op.like]: `%${search}%` } } : {}) // recherche sur le titre
+                },
+                order: [["createdAt", "DESC"]],
+                limit: Number(limit),
+                offset: Number(offset),
+                raw: true,
+                nest: true // permet de garder l'objet include bien structuré
+            });
+
+            // 🔹 Ajouter la ville (optionnel si l'include n'a pas suffit)
+            const dataWithVille = get_offre.map(item => ({
+                ...item,
+                ville: item.OffreEmploi?.lieu || null
+            }));
+
+            return {
+                status: "success",
+                total,
+                data: dataWithVille
+            };
+
+        } catch (err) {
+            console.error("Erreur saveAppelOffre:", err);
+            throw err;
+        }
+    },
+
+
     all_qcm: async (data) => {
         try {
-            const { user_id } = data;
+            const { user_id, page, limit } = data
 
             if (!user_id) {
                 return {
@@ -432,8 +809,10 @@ module.exports = {
                 };
             }
 
+            const offset = (page - 1) * limit;
+
             // 🔹 1️⃣ Récupérer tous les QCM assignés à ce candidat
-            const qcmCandidats = await QcmCandidats.findAll({
+            const { count, rows } = await QcmCandidats.findAndCountAll({
                 where: {
                     candidat_id: user_id,
                     status: {
@@ -441,11 +820,13 @@ module.exports = {
                     }
                 },
                 order: [["assigned_at", "DESC"]],
-                raw: true,
+                limit: Number(limit),
+                offset: Number(offset),
+                raw: true
             });
 
             // 🔹 2️⃣ Aucun QCM
-            if (!qcmCandidats || qcmCandidats.length === 0) {
+            if (!rows || rows.length === 0) {
                 return {
                     status: "info",
                     data: [],
@@ -456,7 +837,7 @@ module.exports = {
             const results = [];
 
             // 🔹 3️⃣ Boucle sur chaque QCM
-            for (const qcmCandidat of qcmCandidats) {
+            for (const qcmCandidat of rows) {
 
                 // 👉 Récupérer l’examen
                 const examen = await ExamenQcm.findOne({
@@ -516,7 +897,182 @@ module.exports = {
             return {
                 status: "success",
                 data: results,
-                total: results.length,
+                total: count,
+                message: "Liste des QCM récupérée avec succès",
+            };
+
+        } catch (err) {
+            console.error("Erreur all_qcm:", err);
+            return {
+                status: "error",
+                message: err.message,
+            };
+        }
+    },
+    all_qcm_search: async (data) => {
+        try {
+
+            console.log(data)
+
+            const { user_id, search = "", page = 1, limit = 10 } = data;
+
+            if (!user_id) {
+                return {
+                    status: "error",
+                    message: "Paramètres manquants",
+                };
+            }
+
+            const offset = (page - 1) * limit;
+
+            const excludedStatus = ["DELETED_BY_CANDIDAT", "REMOVED_BY_COMPANY"];
+            const searchQuery = search ? `%${search}%` : null;
+
+            // 🔹 1️⃣ récupérer les QCM du candidat
+            const qcms = await sequelize.query(
+                `
+            SELECT 
+                qc.qcm_id,
+                qc.status,
+                qc.startDate,
+                qc.endDate,
+                qc.assigned_at,
+
+                e.id,
+                e.post_id,
+                e.titre,
+                e.description,
+                e.duree,
+                e.noteMin,
+                e.mode,
+                e.params,
+                e.questions,
+                e.user_id
+
+            FROM qcm_candidats qc
+
+            JOIN examen_qcms e 
+                ON qc.qcm_id = e.post_id
+
+            WHERE qc.candidat_id = :user_id
+              AND qc.status NOT IN (:excludedStatus)
+              ${searchQuery ? "AND e.titre LIKE :search" : ""}
+
+            ORDER BY qc.assigned_at DESC
+
+            LIMIT :limit OFFSET :offset
+            `,
+                {
+                    replacements: {
+                        user_id,
+                        excludedStatus,
+                        search: searchQuery,
+                        limit: Number(limit),
+                        offset: Number(offset)
+                    },
+                    type: Sequelize.QueryTypes.SELECT
+                }
+            );
+
+
+            // 🔹 2️⃣ total pour pagination
+            const totalResult = await sequelize.query(
+                `
+            SELECT COUNT(*) as total
+            FROM qcm_candidats qc
+            JOIN examen_qcms e 
+                ON qc.qcm_id = e.post_id
+            WHERE qc.candidat_id = :user_id
+              AND qc.status NOT IN (:excludedStatus)
+              ${searchQuery ? "AND e.titre LIKE :search" : ""}
+            `,
+                {
+                    replacements: {
+                        user_id,
+                        excludedStatus,
+                        search: searchQuery
+                    },
+                    type: Sequelize.QueryTypes.SELECT
+                }
+            );
+
+            const total = totalResult[0].total;
+
+
+
+            // 🔹 2️⃣ Aucun QCM
+            if (!qcms || qcms.length === 0) {
+                return {
+                    status: "info",
+                    data: [],
+                    message: "Aucun QCM assigné pour le moment",
+                };
+            }
+
+            const results = [];
+
+            // 🔹 3️⃣ Boucle sur chaque QCM
+            for (const qcmCandidat of qcms) {
+
+                // 👉 Récupérer l’examen
+                const examen = await ExamenQcm.findOne({
+                    where: {
+                        post_id: qcmCandidat.qcm_id,
+                    },
+                    raw: true,
+                });
+
+                if (!examen) continue;
+
+                // 🔒 Supprimer bonnesReponses
+                const questionsSanitized = Array.isArray(examen.questions)
+                    ? examen.questions.map(({ bonnesReponses, ...rest }) => rest)
+                    : [];
+
+
+                // 👉 Récupérer le recruteur (créateur du QCM)
+                const recruteurInfo = await getCandidatinfo(examen.user_id);
+
+
+
+
+
+                results.push({
+                    qcm_id: qcmCandidat.qcm_id,
+                    statut: qcmCandidat.status,
+                    statut_label: formatQcmStatus(qcmCandidat.status),
+                    startDate: qcmCandidat.startDate,
+                    endDate: qcmCandidat.endDate,
+
+                    assigned_at: qcmCandidat.assigned_at,
+
+                    // 📘 Examen nettoyé
+                    examen: {
+                        id: examen.id,
+                        post_id: examen.post_id,
+                        titre: examen.titre,
+                        description: examen.description,
+                        duree: examen.duree,
+                        noteMin: examen.noteMin,
+                        mode: examen.mode,
+                        date_ouverture: new Date(),
+                        params: examen.params,
+                        questions: questionsSanitized, // ✅ sans bonnesReponses
+                    },
+
+                    // 👤 Recruteur
+                    recruteur: {
+                        user_id: examen.user_id,
+                        name: recruteurInfo?.nom || "Recruteur",
+                    },
+                });
+            }
+
+
+            return {
+                status: "success",
+                data: results,
+                total: total,
                 message: "Liste des QCM récupérée avec succès",
             };
 
@@ -897,22 +1453,32 @@ module.exports = {
         }
     },
 
-    entretien: async (user_id) => {
+    entretien: async (data) => {
         try {
 
+
+            const { user_id, page = '1', limit = '10' } = data;
 
             if (!user_id) throw new Error("user_id manquant");
             console.log("Récupération des offres pour l'utilisateur :", user_id);
 
-            const enretien = await EntretienCandidat.findAll({
+            // 📌 Pagination
+            const currentPage = parseInt(page) || 1;
+            const pageSize = parseInt(limit) || 10;
+            const offset = (currentPage - 1) * pageSize;
+
+            // 🔹 Récupération avec pagination
+            const { count, rows } = await EntretienCandidat.findAndCountAll({
                 where: { candidat_id: user_id },
                 order: [["createdAt", "DESC"]],
+                limit: pageSize,
+                offset: offset,
                 raw: true
             });
 
 
             const entretiensFormates = await Promise.all(
-                enretien.map(async (item) => {
+                rows.map(async (item) => {
 
                     const candidatInfo = await getCandidatinfo(item.user_id);
 
@@ -923,8 +1489,8 @@ module.exports = {
                         nom: candidatInfo.nom,
                         candidat_id: item.candidat_id,
                         offre: item.offre,
-                        title: offre_info.title,
-                        entreprise_id: offre_info.entreprise_id,
+                        title: offre_info?.title || "Indisponible",
+                        entreprise_id: offre_info?.entreprise_id || "Indisponible",
                         date_entretien: formatDateHeure(item.date, item.heure),
                         duree: item.duree || null,
                         responsable: item.responsable,
@@ -949,8 +1515,8 @@ module.exports = {
             } else {
                 return {
                     status: "success",
-                    total: entretiensFormates.length,
-                    data: entretiensFormates,
+                    total: count,
+                    data:  entretiensFormates.length > 0 ? entretiensFormates : []
                 }
 
             }
@@ -1056,7 +1622,7 @@ module.exports = {
 
                 object_id: entretien,
                 object_type: "ENTRETIEN",
-                object_label: offre_info.title || null,
+                object_label: offre_info?.title || "Indisponible",
 
                 meta: {
                     entretien_id: entretien,
@@ -1178,7 +1744,7 @@ module.exports = {
 
                     object_id: entretienData.post_id,
                     object_type: "ENTRETIEN",
-                    object_label: offre_info.title || null,
+                    object_label: offre_info?.title || "Indisponible",
 
                     meta: {
                         entretien_id: entretienData.post_id,
@@ -1276,7 +1842,7 @@ Le candidat ${cand_info?.nom || ""} a annulé l’entretien prévu le ${entretie
 
                 object_id: entretien,
                 object_type: "ENTRETIEN",
-                object_label: offre_info.title || null,
+                object_label: offre_info?.title || "Indisponible",
 
                 meta: {
                     entretien_id: entretien,
@@ -1379,7 +1945,7 @@ Le candidat ${cand_info?.nom || ""} a annulé l’entretien prévu le ${entretie
                     message: notificationMessage,
                     object_id: entretienData.post_id,
                     object_type: "ENTRETIEN",
-                    object_label: offre_info.title || null,
+                    object_label: offre_info?.title || "Indisponible",
                     meta: {
                         entretien_id: entretienData.post_id,
                         status: newStatus,
@@ -1389,6 +1955,7 @@ Le candidat ${cand_info?.nom || ""} a annulé l’entretien prévu le ${entretie
                 });
 
             }
+
 
             return {
                 status: "success",
@@ -1435,12 +2002,10 @@ Le candidat ${cand_info?.nom || ""} a annulé l’entretien prévu le ${entretie
             const offre_info = await getEntrepriseIDbyAnnonceID(entretienData.offre);
 
 
-
-
             const dataComplete = {
                 ...entretienData,
                 entreprise: entrepriseInfo || null,
-                offre_details: offre_info || null,
+                offre_details: offre_info?.title || "Indisponible",
                 candidato_info: candidatoInfo || null
 
 

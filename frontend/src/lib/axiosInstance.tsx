@@ -60,8 +60,6 @@ api.interceptors.response.use(
         // --- Récupérer refresh depuis tokenStore ---
         const refreshToken = tokenStore.getRefreshToken();
 
-        alert(" // --- Récupérer refresh depuis tokenStore ---" + refreshToken)
-
         if (!refreshToken) {
           processQueue("NO_REFRESH_TOKEN", null);
           return Promise.reject({
@@ -86,7 +84,6 @@ api.interceptors.response.use(
         const newAccessToken = r.data.accessToken;
 
         // --- METTRE À JOUR le tokenStore ---
-        alert("// --- METTRE À JOUR le tokenStore ---" + newAccessToken)
         tokenStore.setTokens({ accessToken: newAccessToken });
 
         // --- Mise à jour axios defaults ---

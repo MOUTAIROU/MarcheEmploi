@@ -32,9 +32,6 @@ export default function Home() {
 
     const [start, setStart] = useState<DashboardStats | null>(null);
 
-    const [motCleInput, setMotCleInput] = useState("");
-
-
     const [offreTab, setOffreTab] = useState<any[]>([]);
 
     const [messagesList, setMessagesList] = useState<any[]>([]);
@@ -47,6 +44,34 @@ export default function Home() {
         getOffres();
         // return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
+
+     const formatDashboardMessage = (notif: any) => {
+        if (!notif) return null;
+
+
+        const titre = notif.message?.title || "Notification";
+        const texte = notif.message?.message || "";
+        const dateIso = notif.date || notif.message?.meta?.created_at;
+
+        const date = new Date(dateIso);
+
+        const dateFormatee = date.toLocaleDateString("fr-FR", {
+            day: "numeric",
+            month: "short"
+        });
+
+        const heureFormatee = date.toLocaleTimeString("fr-FR", {
+            hour: "2-digit",
+            minute: "2-digit"
+        });
+
+        return {
+            titre,
+            texte: `${texte} — ${dateFormatee} à ${heureFormatee}`,
+            date: dateIso
+        };
+    };
+    
     async function getOffres() {
 
 
@@ -78,32 +103,7 @@ export default function Home() {
     }
 
 
-    const formatDashboardMessage = (notif: any) => {
-        if (!notif) return null;
-
-
-        const titre = notif.message?.title || "Notification";
-        const texte = notif.message?.message || "";
-        const dateIso = notif.date || notif.message?.meta?.created_at;
-
-        const date = new Date(dateIso);
-
-        const dateFormatee = date.toLocaleDateString("fr-FR", {
-            day: "numeric",
-            month: "short"
-        });
-
-        const heureFormatee = date.toLocaleTimeString("fr-FR", {
-            hour: "2-digit",
-            minute: "2-digit"
-        });
-
-        return {
-            titre,
-            texte: `${texte} — ${dateFormatee} à ${heureFormatee}`,
-            date: dateIso
-        };
-    };
+   
 
     return (
         <div>

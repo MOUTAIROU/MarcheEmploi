@@ -10,17 +10,13 @@ import Sidebar from "@/components/SidebarEntreprises/page";
 import api from "@/lib/axiosInstance";
 import PopupError from '@/components/modale/Popup/PopupError/page'
 import PopupSuccess from '@/components/modale/Popup/PopupSuccess/page'
-
+import Pagination from "@/components/PaginationTap/Pagination";
 const actions = [
     "Retirer",
     "Voir l'offre",
 ] as const;
 
 type ActionOption = (typeof actions)[number];
-
-
-
-
 
 
 interface Offre {
@@ -92,13 +88,40 @@ export default function OffresPage() {
 
     const router = useRouter();
 
+    const [search, setSearch] = useState("");
+    const [page, setPage] = useState(1);
+    const [total, setTotal] = useState(0);
+    const limit = 10;
+
     const actionsGroupe = [
         "Retirer",
     ];
 
+    useEffect(() => {
+
+
+        // Cas 2 : recherche mais moins de 3 caractères
+        if (search && search.trim().length > 0 && search.trim().length < 3) return;
+
+        const timer = setTimeout(() => {
+
+            fetchOffres(search, selectedFilter, page);
+
+        }, 500);
+
+        return () => clearTimeout(timer);
+
+    }, [search, selectedFilter, page]);
+
 
     useEffect(() => {
-        getOffres();
+
+        if (search.trim().length !== 0) return;
+        getOffres(page, limit);
+    }, [page]);
+
+    useEffect(() => {
+        getOffres(page, limit);
 
         const handleClickOutside = (event: MouseEvent) => {
             const target = event.target as Node | null;
@@ -138,11 +161,40 @@ export default function OffresPage() {
 
 
 
-    async function getOffres() {
+    const fetchOffres = async (searchValue: string, filterValue: string, pageNumber: number) => {
+
+        try {
 
 
+            const res = await api.get("entreprise_get/mes_appel_offre_save_search", {
+                params: {
+                    search: searchValue,
+                    filter: filterValue,
+                    page: pageNumber,
+                    limit: 10
+                }
+            });
 
-        const response = await api.get("entreprise_get/mes_appel_offre_save");
+
+            setOffreTab(res.data.data)
+
+            setTotal(res.data.total)
+
+
+        } catch (error) {
+            console.error(error);
+        }
+
+    };
+
+    async function getOffres(pageNumber: number = 1, limit: number = 10) {
+
+        const response = await api.get("entreprise_get/mes_appel_offre_save", {
+            params: {
+                page: pageNumber,
+                limit: limit
+            }
+        });
 
         const { data, status } = response
 
@@ -151,6 +203,8 @@ export default function OffresPage() {
         if (status == 201) {
 
             setOffreTab(data.data)
+
+            setTotal(data.total)
 
         }
 
@@ -199,9 +253,6 @@ export default function OffresPage() {
             );
             return;
         }
-
-
-
 
 
         // Pour les autres actions (supprimer, mettre hors ligne, etc.)
@@ -308,11 +359,11 @@ export default function OffresPage() {
         if (currentAction === "Retirer") {
 
             // ✅ Demander confirmation
-        
+
             let res = await api.delete(`/entreprise_get/delete_offres_save_groupe/${selectedOffres}`);
 
             if (res.status == 201) {
-                getOffres()
+                getOffres(page, limit)
             }
 
         }
@@ -393,7 +444,7 @@ export default function OffresPage() {
                 let res = await api.delete(`/entreprise_get/delete_offres_save/${rowId}`);
 
                 if (res.status == 201) {
-                    getOffres()
+                    getOffres(page, limit)
                 }
 
             }
@@ -488,12 +539,22 @@ export default function OffresPage() {
                         </div>
 
                         <div className="actions">
-                            <input
-                                type="text"
-                                placeholder="Rechercher par titre / référence"
-                                className="search"
-                            />
+                            <div className="searchWrapper">
+
+                                <input
+                                    type="text"
+                                    placeholder="Rechercher par titre / référence"
+                                    className="search"
+                                    value={search}
+                                    onChange={(e) => {
+                                        setSearch(e.target.value);
+                                        setPage(1);
+                                    }}
+                                />
+
+                            </div>
                             {/* === FILTRE === */}
+                            {/*
                             <div className="filterWrapper" ref={filterRef}>
                                 <button
                                     className="filter"
@@ -518,6 +579,7 @@ export default function OffresPage() {
                                     </div>
                                 )}
                             </div>
+                             */}
 
 
                             {/* === ACTIONS GROUPEES === */}
@@ -631,6 +693,14 @@ export default function OffresPage() {
                             </tbody>
 
                         </table>
+
+
+                        <Pagination
+                            page={page}
+                            setPage={setPage}
+                            total={total}
+                            limit={limit}
+                        />
 
 
                     </div>

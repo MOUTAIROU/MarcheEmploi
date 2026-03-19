@@ -110,14 +110,14 @@ export default function OffresPage() {
             return (
                 <ul className="response-list">
                     {reponse.map((rep, index) => (
-                        <li key={index}>{rep}</li>
+                        <li key={index}>{reverse_treatment_msg(rep)}</li>
                     ))}
                 </ul>
             );
         }
 
         // 🔹 Si réponse simple
-        return <span>{reponse}</span>;
+        return <span> {reverse_treatment_msg(reponse)}</span>;
     };
 
     function formatFraudeType(type: string): string {
@@ -198,6 +198,29 @@ export default function OffresPage() {
 
 
 
+    function decodeHTML(html: string): string {
+        const txt = document.createElement("textarea");
+        txt.innerHTML = html;
+        return txt.value;
+    }
+
+    function reverse_treatment_msg(msg: string): string {
+        if (!msg) return "";
+
+        let result = msg
+            .replace(/&nbsp;/g, " ")
+            .replace(/<br\s*\/?>/gi, "\n") // gère les retours à la ligne
+            .replace(/''/g, "'");
+
+        // Décodage profond via DOM
+        result = decodeHTML(result);
+        result = decodeHTML(result); // une seconde passe si nécessaire
+        result = decodeHTML(result); // une seconde passe si nécessaire
+        result = decodeHTML(result); // une seconde passe si nécessaire
+        result = decodeHTML(result); // une seconde passe si nécessaire
+
+        return result;
+    }
     if (!data) return <div>Chargement...</div>;
 
     return (
@@ -241,7 +264,7 @@ export default function OffresPage() {
                                     className={`question-card ${correct ? "correct" : "wrong"}`}
                                 >
                                     <h4>
-                                        {q.questionId}. {q.intitule}
+                                        {q.questionId}. {reverse_treatment_msg(q.intitule)}
                                     </h4>
 
                                     <p><strong>Type :</strong> {q.type}</p>
@@ -253,7 +276,7 @@ export default function OffresPage() {
                                             <strong>Options :</strong>
                                             <ul>
                                                 {q.options.map((opt: any, index: any) => (
-                                                    <li key={index}>{opt}</li>
+                                                    <li key={index}>{reverse_treatment_msg(opt)}</li>
                                                 ))}
                                             </ul>
                                         </div>

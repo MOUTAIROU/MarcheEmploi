@@ -8,13 +8,21 @@ const auth = require("../../middlewares/auth.middleware");
 router.get("/annonce_post_id",
     auth, controller.annonce_post_id);
 
+router.get("/annonce_post_id_search",
+    auth, controller.annonce_post_id_search);
 router.get("/entretien",
     auth, controller.entretien);
 
 
 
+router.get("/dashbord_starts",
+    auth, controller.dashbord_starts);
+
 router.get("/all_qcm",
     auth, controller.all_qcm);
+
+router.get("/all_qcm_search",
+    auth, controller.all_qcm_search);
 
 router.get("/get_qcm_by_post_id/:params",
     auth, controller.get_qcm_by_post_id);
@@ -36,6 +44,11 @@ router.get("/set_notification_read/:params",
 
 router.get("/mes_appel_offre_save/",
     auth, controller.mes_appel_offre_save);
+
+router.get("/mes_appel_offre_save_search/",
+    auth, controller.mes_appel_offre_save_search);
+
+
 
 router.get("/all_qcm/",
     auth, controller.all_qcm);

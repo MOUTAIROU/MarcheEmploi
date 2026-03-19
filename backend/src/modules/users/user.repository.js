@@ -1,3 +1,6 @@
+const { Sequelize } = require('sequelize'); // si Node.js CommonJS
+
+const sequelize = require("../../config/database"); // chemin de ton fichier
 const Candidat = require("../models/candidatProfile");
 
 const CandidatPreference = require("../models/candidatPreference");
@@ -6,8 +9,255 @@ const CandidatPreferenceSettings = require("../models/candidatPreferenceSettings
 
 const CandidatCv = require("../models/candidatCv");
 
+const CandParametre = require("../models/CandParametre");
+
+const User = require("../models/User");
+const { raw } = require('express');
+
+
+
 // 4️⃣ Repository
 module.exports = {
+
+    get_user_data: async (data) => {
+        try {
+
+
+            const { user_id } = data;
+
+            if (!user_id) {
+                return {
+                    status: "error",
+                    message: "Paramètres manquants"
+                };
+            }
+
+            const user = await User.findOne({
+                where: { id: user_id },
+                attributes: ["id", "nom"],
+                raw: true
+            });
+
+            // ❌ utilisateur non trouvé
+            if (!user) {
+                return {
+                    status: "error",
+                    message: "Utilisateur introuvable"
+                };
+            }
+
+            // ✅ succès
+            return {
+                status: "success",
+                data: user
+            };
+
+        } catch (err) {
+            console.error("❌ Error fetching candidat parametre info:", err);
+
+            return {
+                status: "error",
+                message: "Erreur lors de la récupération des paramètres"
+            };
+        }
+    },
+
+    delete_user: async (data) => {
+        try {
+            const { user_id } = data;
+
+            if (!user_id) {
+                return {
+                    status: "error",
+                    message: "Paramètres manquants"
+                };
+            }
+
+            // 🔍 Vérifier si l'utilisateur existe
+            const user = await User.findOne({
+                where: { id: user_id },
+                attributes: ["id", "nom", "status"],
+                raw: true
+            });
+
+            if (!user) {
+                return {
+                    status: "error",
+                    message: "Utilisateur introuvable"
+                };
+            }
+
+            // ⚠️ Déjà supprimé
+            if (user.status === "delete_by_user") {
+                return {
+                    status: "error",
+                    message: "Compte déjà désactivé"
+                };
+            }
+
+            // 🔄 Mise à jour du status (soft delete)
+            await User.update(
+                { status: "delete_by_user" },
+                { where: { id: user_id } }
+            );
+
+            // ✅ Réponse
+            return {
+                status: "success",
+                message: "Compte désactivé avec succès",
+                data: {
+                    id: user.id,
+                    nom: user.nom,
+                    status: "delete_by_user"
+                }
+            };
+
+        } catch (err) {
+            console.error("❌ Error deleting user:", err);
+
+            return {
+                status: "error",
+                message: "Erreur lors de la désactivation du compte"
+            };
+        }
+    },
+
+    get_cand_parametre_info: async (data) => {
+        try {
+            const { user_id } = data;
+
+            if (!user_id) {
+                return {
+                    status: "error",
+                    message: "Paramètres manquants"
+                };
+            }
+
+            // 🔹 Requête SQL pour joindre User et CandParametre
+            const query = `
+                SELECT 
+                u.nom,
+                u.email,
+                c.username,
+                c.tel,
+                c.photo_profil,
+                c.activite,
+                c.infos,
+                c.specialisation
+                FROM users u
+                LEFT JOIN cand_parametres c
+                ON u.id = c.user_id
+                WHERE u.id = :user_id
+                LIMIT 1
+                `;
+
+            const [results] = await sequelize.query(query, {
+                replacements: { user_id },
+                type: sequelize.QueryTypes.SELECT,
+            });
+
+            if (!results) {
+                return {
+                    status: "error",
+                    message: "Aucun profil trouvé pour cet utilisateur"
+                };
+            }
+
+            // 🔹 Convertir specialisation JSON si nécessaire
+            if (results.specialisation && typeof results.specialisation === "string") {
+                try {
+                    results.specialisation = JSON.parse(results.specialisation);
+                } catch (err) {
+                    results.specialisation = [];
+                }
+            }
+
+
+
+            return {
+                status: "success",
+                data: results
+            };
+
+        } catch (err) {
+            console.error("❌ Error fetching candidat parametre info:", err);
+
+            return {
+                status: "error",
+                message: "Erreur lors de la récupération des paramètres"
+            };
+        }
+    },
+    cand_parametre_info: async (data) => {
+        try {
+            const { user_id, username, tel, filenameBase, activite, infos, specialisation } = data;
+
+            if (!user_id) {
+                return {
+                    status: "error",
+                    message: "Paramètres manquants"
+                };
+            }
+
+            // Vérifier si le candidat existe déjà
+            const existing = await CandParametre.findOne({ where: { user_id } });
+
+            if (existing) {
+                // Mise à jour des infos
+                await existing.update({
+                    username: username,
+                    tel: tel,
+                    photo_profil: filenameBase?.photo_profil,
+                    activite: activite,
+                    infos: infos,
+                    specialisation: specialisation ? JSON.parse(specialisation) : null
+                });
+
+                return {
+                    status: "success",
+                    message: "Paramètres du candidat mis à jour avec succès"
+                };
+            } else {
+                // Création d’un nouveau profil
+                await CandParametre.create({
+                    user_id: user_id,
+                    username: username,
+                    tel: tel,
+                    photo_profil: filenameBase?.photo_profil,
+                    activite: activite,
+                    infos: infos,
+                    specialisation: specialisation ? JSON.parse(specialisation) : null
+                });
+
+                return {
+                    status: "success",
+                    message: "Paramètres du candidat enregistrés avec succès"
+                };
+            }
+
+        } catch (err) {
+            console.error("❌ Error creating/updating candidat parametre:", err);
+
+            return {
+                status: "error",
+                message: "Erreur lors de l'enregistrement des paramètres"
+            };
+        }
+    },
+    cand_preferences: async (data) => {
+        try {
+
+
+
+        } catch (err) {
+            console.error("❌ Error creating/updating candidat parametre:", err);
+
+            return {
+                status: "error",
+                message: "Erreur lors de l'enregistrement des paramètres"
+            };
+        }
+    },
     createProfile: async (userData) => {
         try {
             const user = await Candidat.create(userData);
@@ -20,7 +270,6 @@ module.exports = {
     },
     foundProfil: async (user_id) => {
 
-        console.log("findUserByID:", user_id)
         try {
             const user = await Candidat.findOne({ where: { user_id } });
             if (user) console.log("✅ User found:", user.user_id);
@@ -178,8 +427,6 @@ module.exports = {
                 raw: true
             })
 
-
-            console.log(get_offre)
 
             if (!get_offre) {
                 return {

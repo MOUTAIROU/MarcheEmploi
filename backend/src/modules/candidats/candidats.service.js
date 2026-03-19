@@ -3,21 +3,36 @@ const repository = require("./candidats.repository");
 const path = require("path");
 const generateUniqueId = require("../IdGeneres/services.generateUniqueId");
 module.exports = {
-    annonce_post_id: async ({ user_id }) => {
+    annonce_post_id: async (data) => {
 
-        return await repository.annonce_post_id(user_id)
+        return await repository.annonce_post_id(data)
 
     },
 
-    entretien: async ({ user_id }) => {
+    annonce_post_id_search: async (data) => {
 
-        return await repository.entretien(user_id)
+        return await repository.annonce_post_id_search(data)
+
+    },
+    entretien: async (data) => {
+
+        return await repository.entretien(data)
+
+    },
+    dashbord_starts: async ({ user_id }) => {
+
+        return await repository.dashbord_starts(user_id)
 
     },
 
     all_qcm: async (data) => {
 
         return await repository.all_qcm(data)
+
+    },
+    all_qcm_search: async (data) => {
+
+        return await repository.all_qcm_search(data)
 
     },
     entretien_status: async (data) => {
@@ -65,7 +80,7 @@ module.exports = {
         return await repository.entretien_detail(data)
 
     },
-    
+
     se_retirer_offre: async (data) => {
 
         return await repository.se_retirer_offre(data)
@@ -96,6 +111,14 @@ module.exports = {
         return await repository.mes_appel_offre_save(data)
 
     },
+
+    mes_appel_offre_save_search: async (data) => {
+
+        return await repository.mes_appel_offre_save_search(data)
+
+    },
+
+
 
 
 

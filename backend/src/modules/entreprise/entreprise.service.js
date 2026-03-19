@@ -183,15 +183,12 @@ module.exports = {
         return await repository.saveEntrepriseInformation(user_id, data)
 
     },
-    notification_preference: async ({ user_id, candidat_postule, countryCode, qcm_termine, entretien_programme, rappel_entretien, offre_expiree, facture }) => {
+    notification_preference: async (data) => {
 
-        console.log(user_id, candidat_postule, qcm_termine, entretien_programme, countryCode, rappel_entretien, offre_expiree, facture)
 
-        const data = {
-            user_id, candidat_postule, qcm_termine, entretien_programme, countryCode, rappel_entretien, offre_expiree, facture
-        }
+       
 
-        return await repository.saveNotificationPreference(user_id, data)
+        return await repository.saveNotificationPreference(data)
 
 
     },

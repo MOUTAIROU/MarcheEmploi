@@ -132,11 +132,14 @@ export default function KYCForm() {
     const isStep1Valid = () => {
         for (const field of REQUIRED_FIELDS_STEP1) {
             if (!formData[field] || String(formData[field]).trim() === "") {
-                alert(`Le champ ${field} est obligatoire`);
+                setSuccessMsg(`Le champ ${field} est obligatoire`);
+                setShowError(true)
                 return false;
             }
             if (field === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
                 alert("Email invalide");
+                setSuccessMsg("Email invalide");
+                setShowError(true)
                 return false;
             }
         }

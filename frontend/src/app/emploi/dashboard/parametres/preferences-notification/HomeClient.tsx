@@ -1,251 +1,216 @@
-'use client';
-import './style.css';
-import Image from "next/image";
-import Header from '@/components/header/page'
-import { useState, useEffect } from "react";
-import { FaMapMarkerAlt, FaCircle } from "react-icons/fa";
-import AnnonceList from "@/components/AnnonceList/page";
+"use client";
+
+import React, { useState, useEffect } from "react";
+import "./style.css";
 import Sidebar from "@/components/Sidebar/page";
-import Link from "next/link";
 import api from "@/lib/axiosInstance";
 
-import { refreshAndRetry } from "@/utils/refreshAndRetry";
-import { useSession } from "@/lib/sessionStore";
 
-type NotificationChannel = "email" | "whatsapp" | "internal";
-type NotificationFrequency = "immediate" | "daily" | "silent";
-
-type CandidateNotificationType =
-    | "emploi"
-    | "actualites"
-    | "entretien"
-    | "whatsapp"
+import PopupError from '@/components/modale/Popup/PopupError/page'
+import PopupSuccess from '@/components/modale/Popup/PopupSuccess/page'
 
 
-const LABELS: Record<CandidateNotificationType, string> = {
-    emploi: "Alertes d'emploi",
-    actualites: "Actualités du site",
-    entretien: "Entretiens (programmation & rappels)",
-    whatsapp: "Notifications WhatsApp",
-};
-
-type CandidateNotificationConfig = {
+type NotificationSettings = {
     enabled: boolean;
-    channels: NotificationChannel[];
-    frequency: NotificationFrequency;
+    email: boolean;
+    internal: boolean;
 };
 
-type CandidateNotificationSettings = Record<
-    CandidateNotificationType,
-    CandidateNotificationConfig
->;
-
-const initialSettings: CandidateNotificationSettings = {
-    emploi: {
-        enabled: true,
-        channels: ["email"],
-        frequency: "immediate",
-    },
-    actualites: {
-        enabled: true,
-        channels: ["email"],
-        frequency: "daily",
-    },
-    entretien: {
-        enabled: true,
-        channels: ["email"],
-        frequency: "immediate",
-    },
-    whatsapp: {
-        enabled: false,
-        channels: ["whatsapp"],
-        frequency: "immediate",
-    },
-
+const initialSettings: NotificationSettings = {
+    enabled: true,
+    email: true,
+    internal: true
 };
 
+export default function NotificationPreferences() {
 
-
-
-export default function Home() {
-
-
-    const [settings, setSettings] =
-        useState<CandidateNotificationSettings>(initialSettings);
-
-
-    const [errors, setErrors] = useState<{ [key: string]: string }>({});
-    const [message, setMessage] = useState("");
+    const [settings, setSettings] = useState<NotificationSettings>(initialSettings);
     const [loading, setLoading] = useState(false);
-
+    const [successMsg, setSuccessMsg] = useState("");
+    const [errorMsg, setErrorMsg] = useState("");
+    const [showError, setShowError] = useState(false);
+    const [showSuccess, setShowSuccess] = useState(false);
 
     useEffect(() => {
-        fetchPreferences();
+        getNotificationSettings();
     }, []);
 
-    const handleSave = async () => {
-        setLoading(true);
-        setMessage("");
-
+    // 🔹 récupérer les préférences
+    async function getNotificationSettings() {
         try {
-            await api.post("/users/cand_preferences", {
-                settings,
-            });
 
-            setMessage("✅ Préférences sauvegardées");
-        } catch (e) {
-            setMessage("❌ Erreur lors de la sauvegarde");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-
-    const toggleEnabled = (type: CandidateNotificationType) => {
-        setSettings(prev => ({
-            ...prev,
-            [type]: { ...prev[type], enabled: !prev[type].enabled }
-        }));
-    };
-
-    const changeFrequency = (
-        type: CandidateNotificationType,
-        frequency: NotificationFrequency
-    ) => {
-        setSettings(prev => ({
-            ...prev,
-            [type]: { ...prev[type], frequency }
-        }));
-    };
-
-    const toggleChannel = (
-        type: CandidateNotificationType,
-        channel: NotificationChannel
-    ) => {
-        setSettings(prev => {
-            const current = prev[type];
-            const exists = current.channels.includes(channel);
-
-            return {
-                ...prev,
-                [type]: {
-                    ...current,
-                    channels: exists
-                        ? current.channels.filter(c => c !== channel)
-                        : [...current.channels, channel],
-                },
-            };
-        });
-    };
+            const response = await api.get("entreprise_get/get_notification_preference");
 
 
 
-    async function fetchPreferences() {
-        try {
-            const res = await api.get("/users/get_cand_preferences");
-            if (!res.data?.data) return;
+            const data = response.data?.data;
 
-        
+            if (!data) return;
+
             setSettings({
-                ...initialSettings,
-                ...res.data.data.settings, // backend retourne la même structure
+                enabled: data.enabled ?? true,
+                email: data.email ?? true,
+                internal: data.internal ?? true
             });
-        } catch (e) {
-            console.error("Erreur récupération préférences", e);
+
+        } catch (error) {
+            console.error("Erreur récupération notifications:", error);
         }
     }
 
+    // 🔹 modification
+    const handleToggle = (field: keyof NotificationSettings, value: boolean) => {
+
+        setSettings(prev => ({
+            ...prev,
+            [field]: value
+        }));
+
+    };
+
+    // 🔹 sauvegarde
+    const handleSave = async () => {
+
+        setLoading(true);
+        setSuccessMsg("");
+        setErrorMsg("");
+
+        try {
+
+            const payload = {
+                settings
+            };
+
+            const response = await api.post(
+                "/entreprise/notification_preference",
+                payload
+            );
+
+            if (response.status == 201) {
+
+                setSuccessMsg("Préférences enregistrées avec succès");
+                setShowSuccess(true);
+
+            }
 
 
+        } catch (error: any) {
+
+            console.error(error);
+            setErrorMsg("Erreur lors de l'enregistrement");
+
+            setShowSuccess(true);
+
+        } finally {
+            setLoading(false);
+        }
+
+    };
 
     return (
         <div>
-            <main >
-
+            <main>
 
                 <div className="container-dashbord">
-                    {/* Sidebar */}
+
                     <Sidebar />
 
-                    {/* Main Content */}
+                    {showError && (
+                        <PopupError
+                            isOpen={showError}
+                            title="Erreur"
+                            message={errorMsg}
+                            onClose={() => setShowError(false)}
+                        />
+                    )}
+
+                    {showSuccess && (
+                        <PopupSuccess
+                            isOpen={showSuccess}
+                            title="Success"
+                            message={successMsg}
+                            onClose={() => setShowSuccess(false)}
+                        />
+                    )}
+
                     <div className="mainContent">
 
+                        <div className="notification-form">
 
-                        <div className="container-ctn">
+                            <h2>Préférences de notification</h2>
 
+                            {/* Activer notifications */}
+                            <div className="notification-item">
 
-                            <div className="tabs">
-                                <Link
-                                    href={`${process.env.LOCAL_HOST}/emploi/dashboard/parametres`}
-                                    className={`tab active"`}
-                                >
-                                    Parametre
-                                </Link>
-                                <button className='tab'>Préférences de notification</button>
+                                <label>
+
+                                    <input
+                                        type="checkbox"
+                                        checked={settings.enabled}
+                                        onChange={(e) =>
+                                            handleToggle("enabled", e.target.checked)
+                                        }
+                                    />
+
+                                    Activer les notifications
+
+                                </label>
+
                             </div>
 
+                            {/* Options */}
+                            {settings.enabled && (
 
-                            {Object.entries(settings).map(([type, config]) => (
-                                <div key={type} className="notification-item">
-                                    <h3>{LABELS[type as CandidateNotificationType]}</h3>
+                                <div className="notification-options">
 
-                                    {/* Activation */}
-                                    <label className="checkbox">
+                                    <label>
+
                                         <input
                                             type="checkbox"
-                                            checked={config.enabled}
-                                            onChange={() => toggleEnabled(type as CandidateNotificationType)}
+                                            checked={settings.email}
+                                            onChange={(e) =>
+                                                handleToggle("email", e.target.checked)
+                                            }
                                         />
-                                        Activer
+
+                                        Notifications par Email
+
                                     </label>
 
-                                    {/* Channels */}
-                                    
-                                   
+                                    <label>
 
-                                    {/* Frequency */}
-                                    <label>Fréquence : </label>
-                                    <select
-                                        value={config.frequency}
-                                        disabled={!config.enabled}
-                                        onChange={(e) =>
-                                            changeFrequency(
-                                                type as CandidateNotificationType,
-                                                e.target.value as NotificationFrequency
-                                            )
-                                        }
-                                    >
-                                        <option value="immediate">Immédiate</option>
-                                        <option value="daily">Quotidienne</option>
-                                        <option value="silent">Silencieuse</option>
-                                    </select>
+                                        <input
+                                            type="checkbox"
+                                            checked={settings.internal}
+                                            onChange={(e) =>
+                                                handleToggle("internal", e.target.checked)
+                                            }
+                                        />
 
-                                    <hr />
+                                        Notifications internes
+
+                                    </label>
+
                                 </div>
-                            ))}
 
+                            )}
 
-                            <button className="save" onClick={handleSave}>Enregistrer les préférences</button>
+                            <button
+                                className="btn save"
+                                onClick={handleSave}
+                                disabled={loading}
+                            >
+                                {loading ? "Enregistrement..." : "Sauvegarder"}
+                            </button>
+
 
                         </div>
 
-
-
-
-
-
-
                     </div>
+
                 </div>
 
             </main>
-            <footer >
-
-            </footer>
         </div>
     );
 }
-
-
-
-

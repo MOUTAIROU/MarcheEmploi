@@ -3,12 +3,10 @@ import './style.css';
 import axios from "axios";
 import { useState, useEffect } from "react";
 import { FaMapMarkerAlt, FaCircle } from "react-icons/fa";
-import AnnonceList from "@/components/AnnonceList/page";
 import Sidebar from "@/components/Sidebar/page";
 import Link from "next/link";
 import ActionConfirmeSupressionModal from "@/components/modale/ActionConfirmeSupressionModal/page";
-import { refreshAndRetry } from "@/utils/refreshAndRetry";
-import { useSession } from "@/lib/sessionStore";
+
 import api from "@/lib/axiosInstance";
 
 
@@ -17,17 +15,87 @@ export default function Home() {
 
     const [isModalOpenGroupe, setIsModalOpenGroupe] = useState(false)
     const [actionGroupeType, setActionGroupeType] = useState('delete-account')
-    const { session } = useSession();
-    console.log(session)
 
+    const [userName, seUserName] = useState("")
+    const [userID, seUserID] = useState("")
+
+
+    useEffect(() => {
+
+        get_user_data();
+    }, []);
+
+    // 🔹 récupérer les préférences
+    async function get_user_data() {
+        try {
+
+            const response = await api.get("users/get_user_data");
+
+            alert('toto')
+
+
+            const { status, data } = response
+
+            if (status == 201) {
+
+                if (data.status == "success") {
+
+                    seUserName(data.data.nom)
+                    seUserID(data.data.id)
+
+                }
+
+            }
+
+
+
+            if (!data) return;
+
+        } catch (error) {
+            console.error("Erreur récupération notifications:", error);
+        }
+    }
     const handleSave = async () => {
         setIsModalOpenGroupe(true)
     };
 
-    console.log(session)
+    async function deletet_user_data() {
+        try {
+
+
+            const payload = {
+                userName,
+                userID
+            };
+
+            const response = await api.post(
+                "users/delete_user",
+                payload
+            );
 
 
 
+
+
+            console.log(response)
+            const { status, data } = response
+
+            if (status == 201) {
+
+                if (data.status == "success") {
+
+                }
+
+            }
+
+
+
+            if (!data) return;
+
+        } catch (error) {
+            console.error("Erreur récupération notifications:", error);
+        }
+    }
 
     return (
         <div>
@@ -43,7 +111,7 @@ export default function Home() {
 
                         <ActionConfirmeSupressionModal
                             title={"Suprssion de vontre commpte"}
-                            name={session?.nom || " "}
+                            name={userName || ""}
                             isOpen={isModalOpenGroupe}
                             action="delete-account"
                             onClose={() => setIsModalOpenGroupe(false)}
@@ -53,7 +121,8 @@ export default function Home() {
                                 switch (actionGroupeType) {
 
                                     case "delete-account":
-                                        console.log("Suppression confirmée pour :",);
+                                        console.log("Suppression confirmée pour :");
+                                        deletet_user_data()
                                         // API - supprimer
                                         break;
 

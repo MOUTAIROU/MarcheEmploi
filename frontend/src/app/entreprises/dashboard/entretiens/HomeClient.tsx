@@ -9,6 +9,51 @@ import { useRouter } from "next/navigation";
 import api from "@/lib/axiosInstance";
 import PopupError from '@/components/modale/Popup/PopupError/page'
 import PopupSuccess from '@/components/modale/Popup/PopupSuccess/page'
+import Pagination from "@/components/PaginationTap/Pagination";
+
+const filters = [
+    "Filtre",
+    "Toutes",
+    "Actives",
+    "En évaluation",
+    "En attente",
+    "Acceptés",
+    "Rejetés"
+] as const;
+
+type FilterKey = typeof filters[number];
+
+const filterStatusMap: Record<FilterKey, string[]> = {
+    "Filtre": [],
+    "Toutes": [
+        "PLANNED",
+        "DONE",
+        "COMPLETED",
+        "CANDIDAT_CONFIRME",
+        "CANDIDAT_REFUSE"
+    ],
+
+    "Actives": [
+        "PLANNED",
+        "CANDIDAT_CONFIRME"
+    ],
+
+    "En évaluation": [
+        "DONE"
+    ],
+
+    "En attente": [
+        "PLANNED"
+    ],
+
+    "Acceptés": [
+        "CANDIDAT_CONFIRME"
+    ],
+
+    "Rejetés": [
+        "CANDIDAT_REFUSE"
+    ]
+};
 
 interface Offre {
     id: number;
@@ -18,6 +63,7 @@ interface Offre {
     nom: string;
     email: string;
     offre: string;
+    titre: string;
     typeEntretien: string;
     date_entretien: string; // ex: "18/12/2025 à 10h30"
     status: "PLANNED" | "DONE" | "REMOVED_BY_COMPANY" | "CANDIDAT_CONFIRME" | "annule" | "termine";
@@ -80,7 +126,6 @@ export default function OffresPage() {
     const [isFilterOpen, setFilterOpen] = useState(false);
     const [entretienTab, setEntretienTab] = useState<Offre[]>([]);
     const [isGroupOpen, setGroupOpen] = useState(false);
-    const [selectedFilter, setSelectedFilter] = useState("Toutes");
     const [openRowMenu, setOpenRowMenu] = useState<string | null>(null);
     const [actionType, setActionType] = useState<"delete" | "notification" | "note">("notification");
 
@@ -97,6 +142,12 @@ export default function OffresPage() {
     const [successMsg, setSuccessMsg] = useState("");
     const [showError, setShowError] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
+
+    const [selectedFilter, setSelectedFilter] = useState<FilterKey>("Filtre");
+    const [search, setSearch] = useState("");
+    const [page, setPage] = useState(1);
+    const [total, setTotal] = useState(0);
+    const limit = 10;
 
 
 
@@ -147,12 +198,67 @@ export default function OffresPage() {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
+    useEffect(() => {
+
+        // Cas 1 : aucun filtre et aucune recherche
+        if (!search && selectedFilter === "Filtre") return;
+
+        // Cas 2 : recherche mais moins de 3 caractères
+        if (search && search.trim().length > 0 && search.trim().length < 3) return;
+
+        const timer = setTimeout(() => {
+
+            fetchOffres(search, selectedFilter, page);
+
+        }, 500);
+
+        return () => clearTimeout(timer);
+
+    }, [search, selectedFilter, page]);
+
+
+    useEffect(() => {
+
+        if (search.trim().length !== 0) return;
+        getOffres(page, limit);
+    }, [page]);
 
 
 
+    const fetchOffres = async (searchValue: string, filterValue: FilterKey, pageNumber: number) => {
 
-    async function getOffres() {
-        const response = await api.get("entreprise_get/entretiens");
+        try {
+
+            const status = filterStatusMap[filterValue];
+
+            const res = await api.get("entreprise_get/entretiens_search", {
+                params: {
+                    search: searchValue,
+                    filter: status,
+                    page: pageNumber,
+                    limit: 10
+                }
+            });
+
+
+            setEntretienTab(res.data.data)
+            setTotal(res.data.total)
+
+
+        } catch (error) {
+            console.error(error);
+        }
+
+    };
+
+
+    async function getOffres(pageNumber: number = 1, limit: number = 10) {
+        const response = await api.get("entreprise_get/entretiens", {
+            params: {
+                page: pageNumber,
+                limit: limit
+            }
+        });
 
         const { data, status } = response
 
@@ -161,6 +267,8 @@ export default function OffresPage() {
         if (status == 201) {
 
             setEntretienTab(data.data)
+            setTotal(data.total)
+
 
         }
 
@@ -169,7 +277,7 @@ export default function OffresPage() {
         // return response.data;
     }
 
-    const handleSelect = (value: string) => {
+    const handleSelect = (value: FilterKey) => {
         setSelectedFilter(value);
         setFilterOpen(false);
     };
@@ -471,6 +579,11 @@ export default function OffresPage() {
                                 type="text"
                                 placeholder="Rechercher par titre / référence"
                                 className="search"
+                                value={search}
+                                onChange={(e) => {
+                                    setSearch(e.target.value);
+                                    setPage(1);
+                                }}
                             />
                             {/* === FILTRE === */}
                             <div className="filterWrapper" ref={filterRef}>
@@ -483,17 +596,15 @@ export default function OffresPage() {
 
                                 {isFilterOpen && (
                                     <div className="dropdown">
-                                        {actionsFiltre.map(
-                                            (option) => (
-                                                <div
-                                                    key={option}
-                                                    className="dropdownItem"
-                                                    onClick={() => handleSelect(option)}
-                                                >
-                                                    {option}
-                                                </div>
-                                            )
-                                        )}
+                                        {filters.map((option) => (
+                                            <div
+                                                key={option}
+                                                className="dropdownItem"
+                                                onClick={() => handleSelect(option)}
+                                            >
+                                                {option}
+                                            </div>
+                                        ))}
                                     </div>
                                 )}
                             </div>
@@ -570,8 +681,8 @@ export default function OffresPage() {
                                                 onChange={() => toggleSelect(offre.entr_id.toString())}
                                             /></td>
                                         <td>{offre.entr_id}</td>
-                                        <td>{offre.email} </td>
-                                        <td>{offre.offre}</td>
+                                        <td>{offre.nom} </td>
+                                        <td>{offre.titre}</td>
                                         <td>{offre.type}</td>
                                         <td>{offre.date_entretien}</td>
                                         <td>{formatStatutEntretien(offre.status)}</td>
@@ -604,6 +715,13 @@ export default function OffresPage() {
                                 ))}
                             </tbody>
                         </table>
+
+                        <Pagination
+                            page={page}
+                            setPage={setPage}
+                            total={total}
+                            limit={limit}
+                        />
 
 
 

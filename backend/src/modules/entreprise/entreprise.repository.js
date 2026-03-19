@@ -434,7 +434,7 @@ module.exports = {
             if (offre.startsWith("OFF-")) {
 
                 await PostulationAnnonceOffreEmploi.update(
-                    { statut: "ENTRETIEN_PROGRAMMER" },
+                    { status: "ENTRETIEN_PROGRAMMER" },
                     { where: { user_id: candidat_info.id, annonce_id: offre } }
                 );
             }
@@ -442,7 +442,7 @@ module.exports = {
             if (offre.startsWith("AOF-")) {
 
                 await PostulationAppelOffre.update(
-                    { statut: "ENTRETIEN_PROGRAMMER" },
+                    { status: "ENTRETIEN_PROGRAMMER" },
                     { where: { user_id: candidat_info.id, annonce_id: offre } }
                 );
             }
@@ -492,7 +492,7 @@ module.exports = {
             await EntretienCandidat.create({
                 ...data,
                 candidat_id: candidatExiste.id,
-                message: data.message[0], // Deja corriger adapter si l'erreur se presente a nouveau e
+                message: data.message || "Vous êtes invité à passer un entretien.", // Deja corriger adapter si l'erreur se presente a nouveau e
                 created_by: user_id
             });
 
@@ -582,7 +582,7 @@ module.exports = {
 
 
                 await PostulationAnnonceOffreEmploi.update(
-                    { statut: decision },
+                    { status: decision },
                     { where: { user_id: entretien.candidat_id, annonce_id: entretien.offre } }
                 );
             }
@@ -590,7 +590,7 @@ module.exports = {
             if (entretien.offre.startsWith("AOF-")) {
 
                 await PostulationAppelOffre.update(
-                    { statut: decision },
+                    { status: decision },
                     { where: { user_id: entretien.candidat_id, annonce_id: entretien.offre } }
                 );
             }
@@ -783,13 +783,21 @@ L’équipe recrutement`;
         }
     },
 
-    saveNotificationPreference: async (
-        user_id,
-        data
-    ) => {
+    saveNotificationPreference: async (data) => {
 
         console.log(data)
         try {
+
+            const { user_id, enabled, email, internal } = data;
+
+            if (!user_id) {
+                return {
+                    status: "error",
+                    message: "user_id manquant"
+                };
+            }
+
+
             // Vérifie si l'offre existe déjà pour cet utilisateur
             const existing = await NotificationPreference.findOne({
                 where: { user_id }
@@ -806,6 +814,8 @@ L’équipe recrutement`;
             await NotificationPreference.create(data);
 
             return { status: "created", message: "Nouvelle EntrepriseInformation créée." };
+
+
 
         } catch (err) {
             console.error("Erreur ExamenQcm:", err);

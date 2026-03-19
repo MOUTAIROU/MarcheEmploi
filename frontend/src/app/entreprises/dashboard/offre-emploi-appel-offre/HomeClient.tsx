@@ -293,11 +293,8 @@ export default function OffresPage() {
                 (item) => item.post_id.toString() === id
             );
 
-
-
             if (offre?.type == "offre_emploi") {
                 router.push(`${process.env.LOCAL_HOST}/entreprises/dashboard/modifie/offre-emploi/${id}`);
-
             }
 
             if (offre?.type == "appel_offre") {

@@ -90,11 +90,13 @@ export default function Home() {
 
 
       // Réponse succès
-      setMessage("Connexion réussie ! Redirection en cours...");
+     
+
 
 
       if (response.status === 201) {
         const { data } = response
+         setMessage("Connexion réussie ! Redirection en cours...");
 
         console.log(data.user.role)
 

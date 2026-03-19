@@ -9,6 +9,26 @@ import ActionGrouperExaminCandidatsModal from '@/components/modale/ActionGrouper
 import ActionModal from '@/components/modale/ActionCandidatExamenModal/page'
 import { useParams } from "next/navigation";
 import api from "@/lib/axiosInstance";
+import Pagination from "@/components/PaginationTap/Pagination";
+const filters = [
+    "Filtre",
+    "Tous",
+    "Assignés",
+    "En cours",
+    "Terminé",
+    "Rejetés"
+] as const;
+
+type FilterKey = typeof filters[number];
+
+const filterStatusMap: Record<FilterKey, string[]> = {
+    "Filtre": [],
+    "Tous": ["ASSIGNED", "IN_PROGRESS", "COMPLETED"],
+    "Assignés": ["ASSIGNED"],
+    "En cours": ["IN_PROGRESS"],
+    "Terminé": ["COMPLETED"],
+    "Rejetés": ["REMOVED_BY_COMPANY", "DELETED_BY_CANDIDAT"]
+};
 
 interface Offre {
     user_id: string;
@@ -21,13 +41,11 @@ interface Offre {
     score: number;
 }
 
-
-
 export default function OffresPage() {
 
     const [isFilterOpen, setFilterOpen] = useState(false);
     const [isGroupOpen, setGroupOpen] = useState(false);
-    const [selectedFilter, setSelectedFilter] = useState("Toutes");
+    const [selectedFilter, setSelectedFilter] = useState<FilterKey>("Filtre");
     const [openRowMenu, setOpenRowMenu] = useState<string | null>(null);
     const [offres, setoffres] = useState<Offre[]>([]);
     const [offresID, setoffresID] = useState<string | null>(null);
@@ -51,18 +69,46 @@ export default function OffresPage() {
 
     const params = useParams();
 
+    const [search, setSearch] = useState("");
+    const [page, setPage] = useState(1);
+    const [total, setTotal] = useState(0);
+    const limit = 10;
+
+
     useEffect(() => {
-
         const post_id_param = params["qcmId"];
-        const post_id = Array.isArray(post_id_param) ? post_id_param[0] : post_id_param;
+        const id = Array.isArray(post_id_param) ? post_id_param[0] : post_id_param;
 
-        console.log(post_id)
+        if (!id) return;
 
-        if (!post_id) return;
+        setoffresID(id);
 
-        setoffresID(post_id)
-        getOffres(post_id);
-    }, [params]);
+        const searchValue = search?.trim() || "";
+
+        // 🔹 Cas 1 : aucune recherche et filtre par défaut "Filtre"
+        if (!searchValue && selectedFilter === "Filtre") {
+            getOffres(id, page, limit); // applique juste le chargement normal
+            return;
+        }
+
+        // 🔹 Cas 2 : recherche trop courte (< 3 caractères)
+        if (searchValue && searchValue.length < 3) return;
+
+        // 🔹 Sinon, on lance la recherche avec filtre
+        const timer = setTimeout(() => {
+            fetchOffres(
+                searchValue,
+                selectedFilter,
+                id,
+                page,
+                limit
+            );
+        }, 500);
+
+        return () => clearTimeout(timer);
+
+    }, [params, search, selectedFilter, page]);
+
 
 
 
@@ -95,21 +141,53 @@ export default function OffresPage() {
     }, []);
 
 
-    async function getOffres(post_id: string) {
-
+    const fetchOffres = async (searchValue: string, filterValue: FilterKey, post_id: string, page: number, limit: number) => {
 
         try {
-            const response = await api.get(
-                `entreprise_get/qcm_candidats_all/${post_id}`
-            );
 
-            const offre = response.data.data; // 👈 objet simple
+            const status = filterStatusMap[filterValue];
+            const res = await api.get("entreprise_get/qcm_candidats_all_search", {
+                params: {
+                    post_id,
+                    search: searchValue,
+                    filter: status,
+                    page,
+                    limit: 10
+                }
+            });
+
+            const offres = res.data.data || [];
+
+            setoffres(offres || [])
+            setTotal(offres.total || 0)
+
+
+        } catch (error) {
+            console.error(error);
+        }
+
+    };
+
+
+    async function getOffres(post_id: string, pageNumber: number = 1, limit: number = 10) {
+        if (!post_id) return
+
+        try {
+            const response = await api.get(`entreprise_get/qcm_candidats_all`, {
+                params: {
+                    post_id,
+                    page: pageNumber,
+                    limit: limit
+                }
+            });
+
+            const offre = response.data.data || [];; // 👈 objet simple
 
             if (!offre) return;
 
-            console.log(offre)
 
-            setoffres(offre)
+            setoffres(offre || [])
+            setTotal(response.data.total || 0)
 
 
 
@@ -122,7 +200,7 @@ export default function OffresPage() {
 
 
 
-    const handleSelect = (value: string) => {
+    const handleSelect = (value: FilterKey) => {
         setSelectedFilter(value);
         setFilterOpen(false);
     };
@@ -420,8 +498,9 @@ export default function OffresPage() {
                         <div className="actions">
                             <input
                                 type="text"
-                                placeholder="Rechercher par titre / référence"
-                                className="search"
+                                placeholder="Recherche par titre"
+                                value={search}
+                                onChange={e => setSearch(e.target.value)}
                             />
                             {/* === FILTRE === */}
                             <div className="filterWrapper" ref={filterRef}>
@@ -434,7 +513,7 @@ export default function OffresPage() {
 
                                 {isFilterOpen && (
                                     <div className="dropdown">
-                                        {Filtreactions.map(
+                                        {filters.map(
                                             (option) => (
                                                 <div
                                                     key={option}
@@ -627,6 +706,12 @@ export default function OffresPage() {
                                 })}
                             </tbody>
                         </table>
+                        <Pagination
+                            page={page}
+                            setPage={setPage}
+                            total={total}
+                            limit={limit}
+                        />
 
 
 

@@ -11,46 +11,27 @@ const NotificationPreference = sequelize.define(
     },
 
     user_id: {
-     type: DataTypes.STRING(50),
+      type: DataTypes.STRING(50),
       allowNull: false,
     },
 
-    countryCode: {
-      type: DataTypes.STRING(5),
-      allowNull: true,
+    enabled: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
     },
 
-    // Chaque bloc de préférence est stocké en JSON
-    candidat_postule: {
-      type: DataTypes.JSON,
-      allowNull: true,
+    email: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
     },
 
-    qcm_termine: {
-      type: DataTypes.JSON,
-      allowNull: true,
+    internal: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: true,
     },
-
-    entretien_programme: {
-      type: DataTypes.JSON,
-      allowNull: true,
-    },
-
-    rappel_entretien: {
-      type: DataTypes.JSON,
-      allowNull: true,
-    },
-
-    offre_expiree: {
-      type: DataTypes.JSON,
-      allowNull: true,
-    },
-
-    facture: {
-      type: DataTypes.JSON,
-      allowNull: true,
-    },
-   
 
     createdAt: {
       type: DataTypes.DATE,
@@ -64,7 +45,7 @@ const NotificationPreference = sequelize.define(
   },
   {
     tableName: "notification_preferences",
-    timestamps: true, // permet de gérer createdAt et updatedAt automatiquement
+    timestamps: true,
   }
 );
 

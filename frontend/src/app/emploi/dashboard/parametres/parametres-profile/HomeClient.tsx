@@ -4,13 +4,14 @@ import Sidebar from "@/components/Sidebar/page";
 import { useState, useRef, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { refreshAndRetry } from "@/utils/refreshAndRetry";
-import QuillEditor from "@/components/QuillEditor/page";
-
 import { useSession } from "@/lib/sessionStore";
 import api from "@/lib/axiosInstance";
 
 import { TIMEZONE_LABELS, CITY_BY_COUNTRY, countryCode, CATEGORIE_DOMAINES, COUNTRY_LABELS } from "@/utils/types";
+
+
+import PopupError from '@/components/modale/Popup/PopupError/page'
+import PopupSuccess from '@/components/modale/Popup/PopupSuccess/page'
 
 const FILE_BASE_URL = `${process.env.SERVER_HOST}/uploads`;
 
@@ -18,13 +19,17 @@ export default function Home() {
     const [activeTab, setActiveTab] = useState("parametre");
 
     const { session } = useSession();
-    const { accessToken, refreshToken, newAccessToken } = useSession(); // <- récupère depuis le contexte
     const potofioPresentationRef = useRef<any>(null);
     const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
 
 
     const [specialisations, setSpecialisations] = useState<string[]>([]);
     const [specialisationInput, setSpecialisationInput] = useState("");
+
+    const [errorMsg, setErrorMsg] = useState("");
+    const [successMsg, setSuccessMsg] = useState("");
+    const [showError, setShowError] = useState(false);
+    const [showSuccess, setShowSuccess] = useState(false);
 
     // ✅ Form state
     const [formData, setFormData] = useState({
@@ -49,10 +54,14 @@ export default function Home() {
 
     async function getOffres() {
         try {
-            const response = await api.get(`/users/get_cand_profile`);
+            const response = await api.get(`/users/get_cand_parametre_info`);
             const offre = response.data.data;
 
+            console.log(response)
+
             if (!offre) return;
+
+
 
             // 🔹 Préremplir les champs texte
             setFormData(prev => ({
@@ -70,23 +79,20 @@ export default function Home() {
             // 🔹 Préremplir les spécialisations
             if (offre.specialisation) {
                 try {
-                    setSpecialisations(JSON.parse(offre.specialisation));
+                    setSpecialisations(offre.specialisation);
                 } catch (e) {
                     console.error("Erreur parsing specialisation", e);
                 }
             }
 
-            // 🔹 Préremplir Quill
-            setTimeout(() => {
-                if (potofioPresentationRef.current && offre.infos) {
-                    potofioPresentationRef.current.root.innerHTML = offre.infos;
-                }
-            }, 0);
 
             // 🔹 Stocker l’avatar serveur pour l’affichage
-            if (offre.filenameBase) {
+            if (offre.photo_profil) {
+
+                console.log(`${process.env.SERVER_HOST}/uploads/${offre.photo_profil}`)
+
                 setAvatarPreview(
-                    `${FILE_BASE_URL}/${offre.filenameBase}`
+                    `${process.env.SERVER_HOST}/uploads/${offre.photo_profil}`
                 );
             }
 
@@ -119,19 +125,32 @@ export default function Home() {
     };
 
     // 🔹 Validation simple
+    // 🔹 Validation simple (1 message à la fois)
     const validateForm = () => {
-        const newErrors: { [key: string]: string } = {};
+        // Liste des champs obligatoires et leurs libellés
+        const requiredFields: { field: keyof typeof formData; label: string }[] = [
+            { field: "username", label: "nom d'utilisateur" },
+            { field: "nom", label: "nom" },
+            { field: "email", label: "e-mail" }
+        ];
 
-        if (!formData.username.trim()) newErrors.username = "Le nom d'utilisateur est requis";
-        if (!formData.nom?.trim()) newErrors.nom = "Le nom est requis";
-        if (!formData.prenom.trim()) newErrors.prenom = "Le prénom est requis";
-        if (!formData.email?.trim()) newErrors.email = "L’e-mail est requis";
-        else if (!/\S+@\S+\.\S+/.test(formData.email)) newErrors.email = "E-mail invalide";
-        if (!formData.tel.trim()) newErrors.tel = "Le téléphone est requis";
-        if (!formData.avatar) newErrors.avatar = "Veuillez sélectionner un avatar";
+        for (let { field, label } of requiredFields) {
+            const value = formData[field];
 
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
+
+            // --- Champs string ---
+            if (!value || (typeof value === "string" && !value.trim())) {
+                setSuccessMsg(`Le champ ${label} est obligatoire`);
+                setShowSuccess(true);
+                return false;
+            }
+
+        }
+
+        // Si tout est OK
+        setSuccessMsg("");
+        setShowSuccess(false);
+        return true;
     };
 
     // 🔹 Soumission via Axios
@@ -146,8 +165,6 @@ export default function Home() {
 
             const payload = new FormData();
 
-
-            console.log(potofioPresentationRef.current?.root.innerHTML)
 
             payload.append("username", formData.username || "");
             payload.append("nom", formData.nom || "");
@@ -173,18 +190,31 @@ export default function Home() {
 
 
             const response = await submitProfile(payload);
-            console.log("✅ Réponse serveur :", response);
 
-            // 🔹 Si on arrive ici, tout a fonctionné
-            setMessage("✅ Profil mis à jour avec succès !");
-            alert("Profil mis à jour avec succès !"); // optionnel
-            console.log("Réponse serveur :", response?.data);
+            if (response.status == 201) {
+
+
+                const { data } = response
+
+                if (data.status == "success" || data.status == "no_change") {
+
+                    setSuccessMsg("Vos informations personnelles ont été correctement enregistrées.");
+                    setShowSuccess(true)
+
+                }
+
+
+            }
+
+
 
 
 
         } catch (error: any) {
             console.error(error);
-            setMessage(error.response?.data?.message || "Erreur lors de la mise à jour");
+            setSuccessMsg("Erreur aux niveaux du serveur.");
+            setShowError(true)
+
         } finally {
             setLoading(false);
         }
@@ -204,12 +234,12 @@ export default function Home() {
 
 
     async function submitProfile(payload: FormData) {
-        alert('// ⚠️ on utilise api ici')
+
         // ⚠️ on utilise api ici
         const response = await api.post(
-            '/users/cand_profile'
+            '/users/cand_parametre_info'
             , payload);
-        return response.data;
+        return response;
     }
 
     return (
@@ -217,6 +247,24 @@ export default function Home() {
             <main>
                 <div className="container-dashbord">
                     <Sidebar />
+
+                    {showError && (
+                        <PopupError
+                            isOpen={showError}
+                            title="Erreur"
+                            message={errorMsg}
+                            onClose={() => setShowError(false)}
+                        />
+                    )}
+
+                    {showSuccess && (
+                        <PopupSuccess
+                            isOpen={showSuccess}
+                            title="Success"
+                            message={successMsg}
+                            onClose={() => setShowSuccess(false)}
+                        />
+                    )}
                     <div className="mainContent">
                         <div className="container-ctn">
                             <div className="tabs">
@@ -240,26 +288,27 @@ export default function Home() {
                                     className="avatar-circle"
                                     onClick={() => document.getElementById("avatarInput")?.click()}
                                 >
-                                    {formData.avatar ? (
 
+                                    {formData.avatar ? (
+                                        // Affiche l'avatar uploadé localement
                                         <Image
                                             src={URL.createObjectURL(formData.avatar)}
-                                            alt="Logo de l'entreprise"
+                                            alt={`${formData.username} avatar 1`}
                                             width={150}
                                             height={150}
                                             className="preview"
                                         />
-
                                     ) : avatarPreview ? (
-
+                                        // Affiche l'avatar serveur
                                         <Image
                                             src={avatarPreview}
-                                            alt="Logo de l'entreprise"
+                                            alt={`${formData.username} avatar 2`}
                                             width={150}
                                             height={150}
                                             className="preview"
                                         />
                                     ) : (
+                                        // Aucun avatar
                                         <div className="empty-avatar">+</div>
                                     )}
                                 </div>
@@ -270,7 +319,6 @@ export default function Home() {
                                     accept="image/*"
                                     onChange={handleAvatarChange}
                                 />
-                                {errors.avatar && <p className="error">{errors.avatar}</p>}
 
                                 <label>Nom d'utilisateur</label>
                                 <input
@@ -280,9 +328,8 @@ export default function Home() {
                                     value={formData.username}
                                     onChange={handleChange}
                                 />
-                                {errors.username && <p className="error">{errors.username}</p>}
 
-                                <label>Nom</label>
+                                <label>Nom complet</label>
                                 <input
                                     type="text"
                                     name="nom"
@@ -290,17 +337,7 @@ export default function Home() {
                                     value={formData.nom}
                                     onChange={handleChange}
                                 />
-                                {errors.nom && <p className="error">{errors.nom}</p>}
 
-                                <label>Prénom</label>
-                                <input
-                                    type="text"
-                                    name="prenom"
-                                    placeholder="Prénom"
-                                    value={formData.prenom}
-                                    onChange={handleChange}
-                                />
-                                {errors.prenom && <p className="error">{errors.prenom}</p>}
 
                                 <label>Adresse e-mail</label>
                                 <input
@@ -310,7 +347,6 @@ export default function Home() {
                                     value={formData.email}
                                     onChange={handleChange}
                                     disabled={true} />
-                                {errors.email && <p className="error">{errors.email}</p>}
 
 
 
@@ -368,12 +404,7 @@ export default function Home() {
 
                                 {errors.activite && <p className="error">{errors.activite}</p>}
 
-                                <label>infos</label>
-                                <QuillEditor
-                                    placeholder="Exemple : 'MarcheEmploi est une entreprise innovante spécialisée dans les solutions RH numériques en Afrique.'"
-                                    editorRef={potofioPresentationRef}
-                                />
-                                {errors.infos && <p className="error">{errors.infos}</p>}
+
 
 
 

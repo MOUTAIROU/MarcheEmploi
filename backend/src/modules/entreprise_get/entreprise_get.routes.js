@@ -28,6 +28,10 @@ router.get("/dashbord_starts",
 router.get("/get_utilisateurs",
     auth, controller.get_utilisateurs);
 
+router.get("/get_utilisateurs_search",
+    auth, controller.get_utilisateurs_search);
+
+
 router.get("/mes_condidatures",
     auth, controller.mes_condidatures);
 
@@ -57,9 +61,17 @@ router.get("/get_qcm_by_post_id/:params",
 
 router.get("/search_offres", auth, controller.search_offres);
 
+router.get("/mes_condidatures_search_offres", auth, controller.mes_condidatures_search_offres);
 
-router.get("/get_offre_by_post_id/:params",
+
+router.get("/get_offre_by_post_id",
     auth, controller.get_offre_by_post_id);
+
+router.get("/qcm_candidats_all_search",
+    auth, controller.qcm_candidats_all_search);
+
+router.get("/get_offre_by_post_id_search",
+    auth, controller.get_offre_by_post_id_search);
 
 router.get("/qcm_candidats_exame_detail/:userid/:qcmid",
     auth, controller.qcm_candidats_exame_detail);
@@ -73,6 +85,11 @@ router.get("/user_infomation/:params",
 
 router.get("/entretiens",
     auth, controller.entretiens);
+
+    router.get("/entretiens_search",
+    auth, controller.entretiens_search);
+
+
 
 router.get("/get_entretiens_by_post_id/:params",
     auth, controller.get_entretiens_by_post_id);
@@ -116,17 +133,24 @@ router.get("/get_cv_candidat/:post_id/:offreId",
 router.get("/get_cv_candidat_user_id/:post_id",
     auth, controller.get_cv_candidat_user_id);
 
-router.get("/qcm_candidats_all/:post_id",
+router.get("/qcm_candidats_all",
     auth, controller.qcm_candidats_all);
-
-
-
 
 router.get("/mes_appel_offre_save",
     auth, controller.mes_appel_offre_save);
 
+
+router.get("/all_qcm_search",
+    auth, controller.all_qcm_search);
+
+router.get("/mes_appel_offre_save_search",
+    auth, controller.mes_appel_offre_save_search);
+
 router.get("/mes_candidats_save",
     auth, controller.mes_candidats_save);
+
+router.get("/mes_candidats_save_search",
+    auth, controller.mes_candidats_save_search);
 
 router.delete("/delete_offres/:params",
     auth, controller.delete_offres);

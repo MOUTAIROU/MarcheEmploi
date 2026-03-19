@@ -9,6 +9,10 @@ const User = sequelize.define("User", {
     password: { type: DataTypes.STRING, allowNull: false },
     role: { type: DataTypes.ENUM("candidat", "entreprise", "recruteur", "freelance"), allowNull: false },
     pays: { type: DataTypes.STRING, allowNull: false },
+    status: {
+        type: DataTypes.ENUM("active", "delete_by_user", "desativer_by_systeme"),
+        defaultValue: "active"
+    },
     candidate_type: {
         type: DataTypes.ENUM("simple", "consultant","entreprise"),
         allowNull: false,

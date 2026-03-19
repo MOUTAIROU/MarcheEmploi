@@ -18,7 +18,6 @@ exports.offres = async (req, res) => {
 exports.information_offres = async (req, res) => {
     try {
 
-
         const result = await service.information_offres({ user_id: req.userId });
 
         res.status(201).json(result);
@@ -45,8 +44,9 @@ exports.dashbord_starts = async (req, res) => {
 exports.mes_appel_offre_save = async (req, res) => {
     try {
 
+        const { page, limit } = req.query
 
-        const result = await service.mes_appel_offre_save({ user_id: req.userId });
+        const result = await service.mes_appel_offre_save({ user_id: req.userId, page, limit });
 
         res.status(201).json(result);
 
@@ -58,8 +58,57 @@ exports.mes_appel_offre_save = async (req, res) => {
 exports.mes_candidats_save = async (req, res) => {
     try {
 
+        const { page, limit } = req.query
 
-        const result = await service.mes_candidats_save({ user_id: req.userId });
+        console.log({ user_id: req.userId, page, limit })
+        const result = await service.mes_candidats_save({ user_id: req.userId, page, limit });
+
+        res.status(201).json(result);
+
+    } catch (error) {
+        res.status(500).json({ error: "Erreur interne" });
+    }
+};
+
+exports.mes_candidats_save_search = async (req, res) => {
+    try {
+
+        const { search, filter, page, limit } = req.query
+
+        // 🔹 récupérer le filtre correctement
+        let filterValues = [];
+
+        if (Array.isArray(req.query['filter[]'])) {
+            filterValues = req.query['filter[]'];
+        } else if (typeof req.query['filter[]'] === 'string') {
+            filterValues = [req.query['filter[]']];
+        }
+
+
+        const result = await service.mes_candidats_save_search({ user_id: req.userId, search, filter: filterValues, page, limit });
+
+        res.status(201).json(result);
+
+    } catch (error) {
+        res.status(500).json({ error: "Erreur interne" });
+    }
+};
+
+exports.all_qcm_search = async (req, res) => {
+    try {
+
+        const { search, filter, page, limit } = req.query
+
+        // 🔹 récupérer le filtre correctement
+        let filterValues = [];
+
+        if (Array.isArray(req.query['filter[]'])) {
+            filterValues = req.query['filter[]'];
+        } else if (typeof req.query['filter[]'] === 'string') {
+            filterValues = [req.query['filter[]']];
+        }
+
+        const result = await service.all_qcm_search({ user_id: req.userId, search, filter: filterValues, page, limit });
 
         res.status(201).json(result);
 
@@ -177,9 +226,9 @@ exports.user_infomation = async (req, res) => {
 exports.mes_condidatures = async (req, res) => {
     try {
 
-        const { params } = req.params;
+        const { page, limit } = req.query
 
-        const result = await service.mes_condidatures({ user_id: req.userId });
+        const result = await service.mes_condidatures({ user_id: req.userId, page, limit });
 
         res.status(201).json(result);
 
@@ -551,9 +600,9 @@ exports.qcm_candidats_all = async (req, res) => {
     try {
 
 
-        const { post_id } = req.params;
+        const { post_id, page, limit } = req.query;
 
-        const result = await service.qcm_candidats_all({ user_id: req.userId, post_id });
+        const result = await service.qcm_candidats_all({ user_id: req.userId, post_id, page, limit });
 
         res.status(201).json(result);
 
@@ -563,6 +612,28 @@ exports.qcm_candidats_all = async (req, res) => {
 
 };
 
+exports.qcm_candidats_all_search = async (req, res) => {
+    try {
+
+        const { post_id, search, filter, page, limit } = req.query;
+
+        // 🔹 récupérer le filtre correctement
+        let filterValues = [];
+
+        if (Array.isArray(req.query['filter[]'])) {
+            filterValues = req.query['filter[]'];
+        } else if (typeof req.query['filter[]'] === 'string') {
+            filterValues = [req.query['filter[]']];
+        }
+
+        const result = await service.qcm_candidats_all_search({ user_id: req.userId, post_id, search, filter: filterValues, page, limit });
+
+        res.status(201).json(result);
+
+    } catch (error) {
+        res.status(500).json({ error: "Erreur interne" });
+    }
+};
 
 
 exports.send_candidat_delete_offresemploi = async (req, res) => {
@@ -796,6 +867,7 @@ exports.get_notification_preference = async (req, res) => {
     try {
 
 
+        
         const result = await service.get_notification_preference({ user_id: req.userId });
 
         res.status(201).json(result);
@@ -810,9 +882,10 @@ exports.get_notification_preference = async (req, res) => {
 
 exports.get_notification = async (req, res) => {
     try {
+        
+        const { page, limit } = req.query
 
-        const result = await service.get_notification({ user_id: req.userId });
-
+        const result = await service.get_notification({ user_id: req.userId,page, limit });
         res.status(201).json(result);
 
     } catch (error) {
@@ -833,26 +906,17 @@ exports.get_presentation_public = async (req, res) => {
     }
 };
 
-exports.get_utilisateurs = async (req, res) => {
-    try {
 
-
-        const result = await service.get_utilisateurs({ user_id: req.userId });
-
-        res.status(201).json(result);
-
-    } catch (error) {
-        res.status(500).json({ error: "Erreur interne" });
-    }
-};
 
 
 
 exports.all_qcm = async (req, res) => {
     try {
 
+        const { page, limit } = req.query
 
-        const result = await service.all_qcm({ user_id: req.userId });
+
+        const result = await service.all_qcm({ user_id: req.userId, page, limit });
 
         res.status(201).json(result);
 
@@ -865,7 +929,31 @@ exports.entretiens = async (req, res) => {
     try {
 
 
-        const result = await service.entretiens({ user_id: req.userId });
+         const { page, limit } = req.query
+        const result = await service.entretiens({ user_id: req.userId,page, limit });
+
+        res.status(201).json(result);
+
+    } catch (error) {
+        res.status(500).json({ error: "Erreur interne" });
+    }
+};
+
+exports.entretiens_search = async (req, res) => {
+    try {
+
+        const { search, filter, page, limit } = req.query
+
+        // 🔹 récupérer le filtre correctement
+        let filterValues = [];
+
+        if (Array.isArray(req.query['filter[]'])) {
+            filterValues = req.query['filter[]'];
+        } else if (typeof req.query['filter[]'] === 'string') {
+            filterValues = [req.query['filter[]']];
+        }
+
+        const result = await service.entretiens_search({ user_id: req.userId, search, filter: filterValues, page, limit });
 
         res.status(201).json(result);
 
@@ -894,9 +982,37 @@ exports.get_entretiens_by_post_id = async (req, res) => {
 exports.get_offre_by_post_id = async (req, res) => {
     try {
 
-        const { params } = req.params
 
-        const result = await service.get_offre_by_post_id({ user_id: req.userId, params });
+        const { post_id, pageNumberOffre, page, limit } = req.query
+
+
+        const result = await service.get_offre_by_post_id({ user_id: req.userId, post_id, pageNumberOffre, page, limit });
+
+        res.status(201).json(result);
+
+    } catch (error) {
+        res.status(500).json({ error: "Erreur interne" });
+    }
+};
+
+exports.get_offre_by_post_id_search = async (req, res) => {
+    try {
+
+
+
+        const { post_id, search, offresearch, filter, offrepage, page, limit } = req.query;
+
+        // 🔹 récupérer le filtre correctement
+        let filterValues = [];
+
+        if (Array.isArray(req.query['filter[]'])) {
+            filterValues = req.query['filter[]'];
+        } else if (typeof req.query['filter[]'] === 'string') {
+            filterValues = [req.query['filter[]']];
+        }
+
+
+        const result = await service.get_offre_by_post_id_search({ user_id: req.userId, post_id, search, offresearch, filter: filterValues, offrepage, page, limit });
 
         res.status(201).json(result);
 
@@ -906,12 +1022,62 @@ exports.get_offre_by_post_id = async (req, res) => {
 };
 
 
+
 exports.search_offres = async (req, res) => {
     try {
 
         const { search, filter, page, limit } = req.query
 
         const result = await service.search_offres({ user_id: req.userId, search, filter, page, limit });
+
+        res.status(201).json(result);
+
+    } catch (error) {
+        res.status(500).json({ error: "Erreur interne" });
+    }
+};
+
+
+exports.mes_condidatures_search_offres = async (req, res) => {
+    try {
+
+        const { search, filter, page, limit } = req.query
+
+        // 🔹 récupérer le filtre correctement
+        let filterValues = [];
+
+        if (Array.isArray(req.query['filter[]'])) {
+            filterValues = req.query['filter[]'];
+        } else if (typeof req.query['filter[]'] === 'string') {
+            filterValues = [req.query['filter[]']];
+        }
+
+
+        const result = await service.mes_condidatures_search_offres({ user_id: req.userId, search, filter: filterValues, page, limit });
+
+        res.status(201).json(result);
+
+    } catch (error) {
+        res.status(500).json({ error: "Erreur interne" });
+    }
+};
+
+exports.mes_appel_offre_save_search = async (req, res) => {
+    try {
+
+        const { search, filter, page, limit } = req.query
+
+        // 🔹 récupérer le filtre correctement
+        let filterValues = [];
+
+        if (Array.isArray(req.query['filter[]'])) {
+            filterValues = req.query['filter[]'];
+        } else if (typeof req.query['filter[]'] === 'string') {
+            filterValues = [req.query['filter[]']];
+        }
+
+
+        const result = await service.mes_appel_offre_save_search({ user_id: req.userId, search, filter: filterValues, page, limit });
 
         res.status(201).json(result);
 
@@ -1011,11 +1177,11 @@ exports.annonce_post_id = async (req, res) => {
     try {
 
 
-         const { post_id,page,limit } = req.query
+        const { post_id, page, limit } = req.query
 
-         const result = await service.annonce_post_id({ user_id: req.userId, post_id,page,limit  });
+        const result = await service.annonce_post_id({ user_id: req.userId, post_id, page, limit });
 
-         res.status(201).json(result);
+        res.status(201).json(result);
 
     } catch (error) {
         res.status(500).json({ error: "Erreur interne" });
@@ -1026,9 +1192,9 @@ exports.annonce_post_id_emploi = async (req, res) => {
     try {
 
 
-        const { post_id ,page,limit } = req.query
+        const { post_id, page, limit } = req.query
 
-        const result = await service.annonce_post_id_emploi({ user_id: req.userId, post_id ,page,limit });
+        const result = await service.annonce_post_id_emploi({ user_id: req.userId, post_id, page, limit });
 
         res.status(201).json(result);
 
@@ -1040,9 +1206,9 @@ exports.annonce_post_id_emploi = async (req, res) => {
 
 exports.annonce_post_id_emploi_search_candidats = async (req, res) => {
     try {
- 
 
-       const { post_id, search, page, limit } = req.query;
+
+        const { post_id, search, page, limit } = req.query;
 
         // 🔹 récupérer le filtre correctement
         let filterValues = [];
@@ -1053,9 +1219,9 @@ exports.annonce_post_id_emploi_search_candidats = async (req, res) => {
             filterValues = [req.query['filter[]']];
         }
 
-    
 
-        const result = await service.annonce_post_id_emploi_search_candidats({ user_id: req.userId, post_id ,search,filter:filterValues,page,limit });
+
+        const result = await service.annonce_post_id_emploi_search_candidats({ user_id: req.userId, post_id, search, filter: filterValues, page, limit });
 
         res.status(201).json(result);
 
@@ -1066,9 +1232,9 @@ exports.annonce_post_id_emploi_search_candidats = async (req, res) => {
 
 exports.annonce_post_id_search_candidats = async (req, res) => {
     try {
- 
 
-       const { post_id, search, page, limit } = req.query;
+
+        const { post_id, search, page, limit } = req.query;
 
         // 🔹 récupérer le filtre correctement
         let filterValues = [];
@@ -1079,9 +1245,48 @@ exports.annonce_post_id_search_candidats = async (req, res) => {
             filterValues = [req.query['filter[]']];
         }
 
-    
 
-        const result = await service.annonce_post_id_search_candidats({ user_id: req.userId, post_id ,search,filter:filterValues,page,limit });
+
+        const result = await service.annonce_post_id_search_candidats({ user_id: req.userId, post_id, search, filter: filterValues, page, limit });
+
+        res.status(201).json(result);
+
+    } catch (error) {
+        res.status(500).json({ error: "Erreur interne" });
+    }
+};
+
+exports.get_utilisateurs = async (req, res) => {
+    try {
+
+        const { page, limit } = req.query
+        const result = await service.get_utilisateurs({ user_id: req.userId, page, limit });
+
+        res.status(201).json(result);
+
+    } catch (error) {
+        res.status(500).json({ error: "Erreur interne" });
+    }
+};
+
+exports.get_utilisateurs_search = async (req, res) => {
+    try {
+
+
+        const { search, page, limit } = req.query;
+
+        // 🔹 récupérer le filtre correctement
+        let filterValues = [];
+
+        if (Array.isArray(req.query['filter[]'])) {
+            filterValues = req.query['filter[]'];
+        } else if (typeof req.query['filter[]'] === 'string') {
+            filterValues = [req.query['filter[]']];
+        }
+
+
+
+        const result = await service.get_utilisateurs_search({ user_id: req.userId, search, filter: filterValues, page, limit });
 
         res.status(201).json(result);
 

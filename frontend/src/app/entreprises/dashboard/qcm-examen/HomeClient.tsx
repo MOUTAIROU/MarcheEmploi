@@ -9,10 +9,11 @@ import PopupError from '@/components/modale/Popup/PopupError/page'
 import ActionModal from '@/components/modale/ActionQCMModal/page'
 import api from "@/lib/axiosInstance";
 import { getCategorieLabel, country, countryCode } from "@/utils/types";
-
+import Pagination from "@/components/PaginationTap/Pagination";
 
 interface Offre {
-    id: number;                     // ID du QCM
+    id: number;
+    titre: string;                    // ID du QCM
     categorie: string;               // ex: "gestion_projet"
     duree: number | string;          // durée en minutes
     nombreQuestions: number;         // nombre total de questions
@@ -76,9 +77,39 @@ export default function OffresPage() {
     const router = useRouter();
 
 
+    const [search, setSearch] = useState("");
+    const [page, setPage] = useState(1);
+    const [total, setTotal] = useState(0);
+    const limit = 10;
+
+
     useEffect(() => {
 
-        getOffres();
+
+        // Cas 2 : recherche mais moins de 3 caractères
+        if (search && search.trim().length > 0 && search.trim().length < 3) return;
+
+        const timer = setTimeout(() => {
+
+            fetchOffres(search, selectedFilter, page);
+
+        }, 500);
+
+        return () => clearTimeout(timer);
+
+    }, [search, selectedFilter, page]);
+
+
+    useEffect(() => {
+
+        if (search.trim().length !== 0) return;
+
+        getOffres(page, limit);
+    }, [page]);
+
+    useEffect(() => {
+
+        getOffres(page, limit);
 
         const handleClickOutside = (event: MouseEvent) => {
             const target = event.target as Node;
@@ -107,12 +138,41 @@ export default function OffresPage() {
     }, []);
 
 
+    const fetchOffres = async (searchValue: string, filterValue: string, pageNumber: number) => {
+
+        try {
+
+
+            const res = await api.get("entreprise_get/all_qcm_search", {
+                params: {
+                    search: searchValue,
+                    filter: filterValue,
+                    page: pageNumber,
+                    limit: 10
+                }
+            });
+
+
+            setQcmTab(res.data.data)
+
+            setTotal(res.data.total)
+
+
+        } catch (error) {
+            console.error(error);
+        }
+
+    };
 
 
 
-
-    async function getOffres() {
-        const response = await api.get("entreprise_get/all_qcm");
+    async function getOffres(pageNumber: number = 1, limit: number = 10) {
+        const response = await api.get("entreprise_get/all_qcm", {
+            params: {
+                page: pageNumber,
+                limit: limit
+            }
+        });
 
         const { data, status } = response
 
@@ -120,6 +180,7 @@ export default function OffresPage() {
 
 
             setQcmTab(data.data)
+            setTotal(data.total)
 
         }
 
@@ -214,7 +275,7 @@ export default function OffresPage() {
 
             console.log(res)
             if (res.status == 201) {
-                getOffres();
+                getOffres(page, limit);
 
             }
 
@@ -273,7 +334,7 @@ export default function OffresPage() {
 
             console.log(res)
             if (res.status == 201) {
-                getOffres();
+                getOffres(page, limit);
 
             }
 
@@ -335,8 +396,14 @@ export default function OffresPage() {
                                 type="text"
                                 placeholder="Rechercher par titre / référence"
                                 className="search"
+                                value={search}
+                                onChange={(e) => {
+                                    setSearch(e.target.value);
+                                    setPage(1);
+                                }}
                             />
                             {/* === FILTRE === */}
+                            {/*
                             <div className="filterWrapper" ref={filterRef}>
                                 <button
                                     className="filter"
@@ -361,6 +428,8 @@ export default function OffresPage() {
                                     </div>
                                 )}
                             </div>
+                            
+                            */}
 
 
                             {/* === ACTIONS GROUPEES === */}
@@ -412,9 +481,11 @@ export default function OffresPage() {
                                         />
                                     </th>
                                     <th>ID QCM</th>
+                                    <th>titre</th>
+
                                     <th>Domaine</th>
-                                    <th>Nombre de Question</th>
-                                    <th>Durée (min)</th>
+                                    {/* <th>Nombre de Question</th>
+                                    <th>Durée (min)</th> */}
                                     <th>Offres Associées</th>
                                     <th>Score Moyenne</th>
                                     <th>Nbre Candidats</th>
@@ -432,9 +503,10 @@ export default function OffresPage() {
                                                 onChange={() => toggleSelect(offre.post_id.toString())}
                                             /></td>
                                         <td>{offre.post_id}</td>
+                                        <td>{offre.titre}</td>
                                         <td>{getCategorieLabel(offre.categorie)}</td>
-                                        <td>{offre.nombreQuestions}</td>
-                                        <td>{offre.duree}</td>
+                                        {/*<td>{offre.nombreQuestions}</td>
+                                        <td>{offre.duree}</td>*/}
                                         <td>{offre.nombreOffresByQcmId}</td>
                                         <td>{offre.scoreMoyen}</td>
 
@@ -469,6 +541,12 @@ export default function OffresPage() {
                                 ))}
                             </tbody>
                         </table>
+                        <Pagination
+                            page={page}
+                            setPage={setPage}
+                            total={total}
+                            limit={limit}
+                        />
 
 
 

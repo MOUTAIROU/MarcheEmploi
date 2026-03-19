@@ -1,5 +1,7 @@
 const { Op, where } = require("sequelize");
 const { Sequelize } = require('sequelize'); // si Node.js CommonJS
+const sequelize = require("../../config/database"); // chemin de ton fichier
+const { QueryTypes } = require("sequelize");
 
 const OffreEmploi = require("../models/offreEmploi");
 const AppelOffre = require("../models/appelOffre");
@@ -395,6 +397,162 @@ module.exports = {
             throw err;
         }
     },
+    mes_condidatures_search_offres: async (data) => {
+        try {
+            const { user_id, search = "", filter = [], page = 1, limit = 10 } = data;
+
+            if (!user_id) throw new Error("user_id manquant");
+
+            const candidat_info = await getCandidatByUserId(user_id)
+
+            const offset = (page - 1) * limit;
+
+            const excludedStatuts = ["DELETED_BY_COMPANY", "DELETED_BY_CANDIDAT", "delete", "expire"];
+            const searchQuery = search ? `%${search}%` : null;
+
+            // 🔹 Utiliser filter pour IN si fourni
+            const filterQuery = filter.length > 0 ? filter : null;
+
+            // -----------------------------
+            // 1️⃣ Calcul du total
+            // -----------------------------
+            const totalResult = await sequelize.query(
+                `
+            SELECT COUNT(*) as total FROM (
+
+                SELECT p.id
+                FROM postulation_annonces_offre_emploi p
+                JOIN offres_emploi a ON p.annonce_id = a.post_id
+                WHERE p.user_id = :user_id
+                  AND p.statut NOT IN (:excludedStatuts)
+                  ${filterQuery ? "AND p.statut IN (:filterQuery)" : ""}
+                  ${search ? "AND a.objet LIKE :search" : ""}
+
+                UNION ALL
+
+                SELECT p.id
+                FROM postulation_appel_offre p
+                JOIN (
+                  SELECT post_id, objet, lieu FROM appel_offres
+                  UNION ALL
+                  SELECT post_id, objet, lieu FROM appel_offres_ami
+                  UNION ALL
+                  SELECT post_id, objet, lieu FROM appel_offres_consultation
+                  UNION ALL
+                  SELECT post_id, objet, lieu FROM appel_offres_recrutement_consultant
+                ) a ON p.annonce_id = a.post_id
+                WHERE p.user_id = :user_id
+                  AND p.statut NOT IN (:excludedStatuts)
+                  ${filterQuery ? "AND p.statut IN (:filterQuery)" : ""}
+                  ${search ? "AND a.objet LIKE :search" : ""}
+
+            ) AS total_table;
+            `,
+                {
+                    replacements: {
+                        user_id,
+                        excludedStatuts,
+                        filterQuery,
+                        search: searchQuery
+                    },
+                    type: QueryTypes.SELECT
+                }
+            );
+
+            const total = totalResult[0].total;
+
+            // -----------------------------
+            // 2️⃣ Données paginées
+            // -----------------------------
+            const postulations = await sequelize.query(
+                `
+            SELECT p.id, p.user_id, p.annonce_id, 'offre' AS source, a.objet AS annonce_objet, a.lieu AS ville,
+                   p.statut, p.tab_notification, p.metadata, p.createdAt, p.updatedAt
+            FROM postulation_annonces_offre_emploi p
+            JOIN offres_emploi a ON p.annonce_id = a.post_id
+            WHERE p.user_id = :user_id
+              AND p.statut NOT IN (:excludedStatuts)
+              ${filterQuery ? "AND p.statut IN (:filterQuery)" : ""}
+              ${search ? "AND a.objet LIKE :search" : ""}
+
+            UNION ALL
+
+            SELECT p.id, p.user_id, p.annonce_id, 'appel' AS source, a.objet AS annonce_objet, a.lieu AS ville,
+                   p.statut, p.tab_notification, p.metadata, p.createdAt, p.updatedAt
+            FROM postulation_appel_offre p
+            JOIN (
+              SELECT post_id, objet, lieu FROM appel_offres
+              UNION ALL
+              SELECT post_id, objet, lieu FROM appel_offres_ami
+              UNION ALL
+              SELECT post_id, objet, lieu FROM appel_offres_consultation
+              UNION ALL
+              SELECT post_id, objet, lieu FROM appel_offres_recrutement_consultant
+            ) a ON p.annonce_id = a.post_id
+            WHERE p.user_id = :user_id
+              AND p.statut NOT IN (:excludedStatuts)
+              ${filterQuery ? "AND p.statut IN (:filterQuery)" : ""}
+              ${search ? "AND a.objet LIKE :search" : ""}
+
+            ORDER BY createdAt DESC
+            LIMIT :limit OFFSET :offset;
+            `,
+                {
+                    replacements: {
+                        user_id,
+                        excludedStatuts,
+                        filterQuery,
+                        search: searchQuery,
+                        limit: Number(limit),
+                        offset: Number(offset)
+                    },
+                    type: QueryTypes.SELECT
+                }
+            );
+
+            // 3️⃣ Enrichissement
+            const enrichedOffers = await Promise.all(
+                postulations.map(async (postulation) => {
+                    const annonce_id = postulation.annonce_id;
+                    const annonce_info = await getEntrepriseIDbyAnnonceID(annonce_id);
+                    if (!annonce_info) return null;
+
+                    const entreprise_info = await getCandidatinfo(annonce_info.entreprise_id);
+
+                    const tabAnnonce = Array.isArray(postulation.tab_notification)
+                        ? postulation.tab_notification
+                        : [];
+                    const unread_count = tabAnnonce.filter(item => !item.is_read).length;
+
+                    return {
+                        postulation_id: postulation.id,
+                        createdAt: postulation.createdAt,
+                        ville: annonce_info.ville,
+                        type: annonce_info.source,
+                        annonce_id,
+                        tabAnnonce,
+                        statut: postulation.statut,
+                        unread_annonce_count: unread_count,
+                        offre_title: annonce_info.title,
+                        entreprise_nom: entreprise_info.nom,
+                        user_email: candidat_info.email
+                    };
+                })
+            );
+
+            const cleanData = enrichedOffers.filter(Boolean);
+
+            return {
+                status: "success",
+                total,
+                data: cleanData
+            };
+
+        } catch (err) {
+            console.error(err);
+            throw err;
+        }
+    },
     dashbord_starts: async (user_id) => {
         try {
 
@@ -409,7 +567,7 @@ module.exports = {
             // ======================
             // 📊 OFFRES PUBLIÉES
             // ======================
-          
+
             const results = await Promise.all([
                 OffreEmploi.findAll({ attributes: ["post_id"], where: { user_id, statut: { [Op.notIn]: ["delete"] } }, raw: true }),
                 AppelOffre.findAll({ attributes: ["post_id"], where: { user_id, statut: { [Op.notIn]: ["delete"] } }, raw: true }),
@@ -420,7 +578,7 @@ module.exports = {
 
             const postIds = [...new Set(results.flat().map(r => r.post_id))];
 
-           
+
 
             // ======================
             // 📄 CANDIDATURES
@@ -1812,11 +1970,10 @@ module.exports = {
         }
     },
 
-    mes_condidatures: async (
-        data
-    ) => {
+    mes_condidatures: async (data) => {
 
-        const { user_id } = data
+
+        const { user_id, page = 1, limit = 10 } = data;
 
         try {
             if (!user_id) throw new Error("user_id manquant");
@@ -1825,22 +1982,92 @@ module.exports = {
             const candidat_info = await getCandidatByUserId(user_id)
 
 
+
+
+            const offset = (page - 1) * limit;
+
+            const totalResult = await sequelize.query(
+                `
+                    SELECT COUNT(*) as total FROM (
+                        SELECT id
+                        FROM postulation_annonces_offre_emploi
+                        WHERE user_id = :user_id
+
+                        UNION ALL
+
+                        SELECT id
+                        FROM postulation_appel_offre
+                        WHERE user_id = :user_id
+                    ) AS total_table
+
+                `,
+                {
+                    replacements: { user_id },
+                    type: QueryTypes.SELECT
+                });
+
+            const total = totalResult[0].total;
+
+
+            const postulations = await sequelize.query(
+                `
+                    SELECT 
+                    id,
+                    user_id,
+                    annonce_id,
+                    NULL AS nom,
+                    NULL AS email,
+                    statut,
+                    NULL AS telephone,
+                    lettre_motivation,
+                    NULL AS fichier_pdf,
+                    tab_notification,
+                    metadata,
+                    createdAt,
+                    updatedAt,
+                    'offre' AS source
+                    FROM postulation_annonces_offre_emploi
+                    WHERE user_id = :user_id
+
+                    UNION ALL
+
+                    SELECT 
+                    id,
+                    user_id,
+                    annonce_id,
+                    nom,
+                    email,
+                    statut,
+                    telephone,
+                    lettre_motivation,
+                    fichier_pdf,
+                    tab_notification,
+                    metadata,
+                    createdAt,
+                    updatedAt,
+                    'appel' AS source
+                    FROM postulation_appel_offre
+                    WHERE user_id = :user_id
+
+                    ORDER BY createdAt DESC
+                    LIMIT :limit OFFSET :offset
+            `,
+                {
+                    replacements: {
+                        user_id,
+                        limit: Number(limit),
+                        offset: Number(offset)
+                    },
+                    type: QueryTypes.SELECT
+                });
+
+
             // 1️⃣ Récupérer toutes les postulations
-            const postulationsOffres = await PostulationAnnonceOffreEmploi.findAll({
-                where: { user_id },
-                raw: true,
-            });
 
-            const postulationsAppels = await PostulationAppelOffre.findAll({
-                where: { user_id },
-                raw: true,
-            });
-
-            const allOffers = [...postulationsOffres, ...postulationsAppels];
 
             // 2️⃣ Enrichir chaque annonce
             const enrichedOffers = await Promise.all(
-                allOffers.map(async (postulation) => {
+                postulations.map(async (postulation) => {
 
                     const annonce_id = postulation.annonce_id;
 
@@ -1884,7 +2111,7 @@ module.exports = {
 
             return {
                 status: "success",
-                total: cleanData.length,
+                total: total,
                 data: cleanData,
             };
         } catch (err) {
@@ -1892,24 +2119,32 @@ module.exports = {
             throw err;
         }
     },
-    all_qcm: async (user_id) => {
+    all_qcm: async (data) => {
         try {
+            const { user_id, page, limit } = data
 
-            const qcms = await ExamenQcm.findAll({
+            if (!user_id) throw new Error("user_id manquant");
+
+            const offset = (page - 1) * limit;
+
+            const { count, rows } = await ExamenQcm.findAndCountAll({
                 where: {
                     user_id,
                     statut: {
                         [Op.notIn]: ["DELETED_BY_COMPANY", "DELETED_BY_CANDIDAT"]   // 👈 exclure ce statut
                     }
                 },
-                attributes: ["id", "categorie", "offreId", "duree", "questions", "post_id"],
+                attributes: ["id", "categorie", "offreId", "duree", "questions", "post_id", "titre"],
                 order: [["createdAt", "DESC"]],
+                limit: Number(limit),
+                offset: Number(offset),
                 raw: true
             });
 
             const result = await Promise.all(
-                qcms.map(async (qcm) => ({
+                rows.map(async (qcm) => ({
                     id: qcm.id,
+                    titre: qcm.titre,
                     post_id: qcm.post_id,
                     categorie: qcm.categorie,
                     offreId: qcm.offreId,
@@ -1922,7 +2157,6 @@ module.exports = {
                 }))
             );
 
-
             if (!result) {
                 return {
                     status: "success",
@@ -1932,11 +2166,83 @@ module.exports = {
             } else {
                 return {
                     status: "success",
-                    total: result.length,
+                    total: count,
                     data: result,
                 };
             }
 
+
+
+
+        } catch (err) {
+            console.error("Erreur getOffre:", err);
+            throw err;
+        }
+    },
+    all_qcm_search: async (data) => {
+
+        try {
+
+            const { user_id, search = "", page = 1, limit = 10 } = data;
+
+            if (!user_id) throw new Error("user_id manquant");
+
+            const offset = (page - 1) * limit;
+
+            // 🔹 where dynamique
+            const whereClause = {
+                user_id,
+                statut: {
+                    [Op.notIn]: ["DELETED_BY_COMPANY", "DELETED_BY_CANDIDAT"]
+                }
+            };
+
+            // 🔹 ajouter recherche sur le titre
+            if (search && search.trim() !== "") {
+                whereClause.titre = {
+                    [Op.like]: `%${search}%`
+                };
+            }
+
+            const { count, rows } = await ExamenQcm.findAndCountAll({
+                where: whereClause,
+                attributes: [
+                    "id",
+                    "categorie",
+                    "offreId",
+                    "duree",
+                    "questions",
+                    "post_id",
+                    "titre"
+                ],
+                order: [["createdAt", "DESC"]],
+                limit: Number(limit),
+                offset: Number(offset),
+                raw: true
+            });
+
+            const result = await Promise.all(
+                rows.map(async (qcm) => ({
+                    id: qcm.id,
+                    titre: qcm.titre,
+                    post_id: qcm.post_id,
+                    categorie: qcm.categorie,
+                    offreId: qcm.offreId,
+                    duree: qcm.duree,
+                    nombreQuestions: Array.isArray(qcm.questions) ? qcm.questions.length : 0,
+                    scoreMoyen: await getScoreMoyenByOffreId(qcm.post_id),
+                    nombreCandidats: await getNombreCandidatsByOffreId(qcm.post_id),
+                    nombreOffresByQcmId: await getNombreOffresByQcmId(qcm.post_id),
+                }))
+            );
+
+            return {
+                status: "success",
+                total: count,
+                page: Number(page),
+                limit: Number(limit),
+                data: result
+            };
 
 
 
@@ -2065,156 +2371,445 @@ module.exports = {
     get_offre_by_post_id: async (data) => {
         try {
 
+            console.log(data)
 
-            const { user_id, params } = data;
+            const {
+                user_id,
+                post_id,
+                page = 1,
+                pageNumberOffre = 1,
+                limit = 10
+            } = data;
 
-            if (!user_id || !params) {
+            if (!user_id || !post_id) {
                 return {
                     status: "error",
                     message: "Paramètres manquants",
                 };
             }
 
+            const offsetQcm = (page - 1) * limit;
+            const offsetOffre = (pageNumberOffre - 1) * limit;
 
-            //  const candidats = await getCandidatsByAnnonceId(post_id);
+            const offresQcm = await sequelize.query(
+                `
+                    SELECT post_id, titre
+                    FROM (
 
-            // 1️⃣ Offres liées directement au QCM
-            const offresDirect = await ExamenQcm.findAll({
-                where: { post_id: params },
-                attributes: ["offreId"],
-                raw: true
-            });
+                        SELECT post_id, objet AS titre, createdAt
+                        FROM offres_emploi
 
+                        UNION ALL
 
-            // 2️⃣ Offres liées via table de liaison
-            const offresViaTable = await QcmOffres.findAll({
-                where: { qcm_id: params },
-                attributes: ["offre_id"],
-                raw: true
-            });
+                        SELECT post_id, objet AS titre, createdAt
+                        FROM appel_offres
 
+                        UNION ALL
 
-            // 3️⃣ Fusionner
-            const allOffreIds = [
-                ...offresDirect.map(o => o.offreId),
-                ...offresViaTable.map(o => o.offre_id)
-            ];
+                        SELECT post_id, objet AS titre, createdAt
+                        FROM appel_offres_ami
 
+                        UNION ALL
 
+                        SELECT post_id, objet AS titre, createdAt
+                        FROM appel_offres_consultation
 
-            // 4️⃣ Supprimer doublons
-            const uniqueOffreIds = [
-                ...new Set(
-                    allOffreIds
-                        .filter(Boolean)                // enlève null / undefined / ""
-                        .flatMap(str => str.split(",")) // éclate les chaînes multiples
-                        .map(str => str.trim())         // enlève espaces invisibles
-                        .filter(Boolean)                // enlève chaînes vides éventuelles
-                )
-            ];
+                        UNION ALL
 
+                        SELECT post_id, objet AS titre, createdAt
+                        FROM appel_offres_recrutement_consultant
 
-            // 4️⃣ Mapper chaque offre pour récupérer le titre et les candidats
-            const offresAvecTitre = await Promise.all(
-                uniqueOffreIds.map(async (post_id) => {
+                    ) annonces
 
-                    // Récupérer les candidats liés
-                    const candidats = await getEntrepriseIDbyAnnonceID(post_id);
+                    WHERE post_id IN (
+                        SELECT offreId FROM examen_qcms WHERE post_id = :post_id
+                        UNION
+                        SELECT offre_id FROM qcm_offres WHERE qcm_id = :post_id
+                    )
 
-                    console.log(candidats?.title)
-
-                    return {
+                    ORDER BY createdAt DESC
+                    LIMIT :limit OFFSET :offset
+`,
+                {
+                    replacements: {
                         post_id,
-                        titre: candidats?.title || "Titre non trouvé",
-                    };
-                })
-            )
+                        limit: Number(limit),
+                        offset: Number(offsetQcm)
+                    },
+                    type: QueryTypes.SELECT
+                });
 
 
-            const [
-                offresEmploi,
-                appelsOffres,
-                amis,
-                consultations,
-                recrutements
-            ] = await Promise.all([
-                OffreEmploi.findAll({
-                    where: { user_id, statut: { [Op.notIn]: ["delete", "expire"] } },
-                    attributes: ["post_id", "objet"],
-                    order: [["createdAt", "DESC"]], // optionnel : trier par date
-                    raw: true
-                }),
-                AppelOffre.findAll({
-                    where: { user_id, statut: { [Op.notIn]: ["delete", "expire"] } },
-                    attributes: ["post_id", "objet"],
-                    order: [["createdAt", "DESC"]],
-                    raw: true
-                }),
-                AppelOffreAmi.findAll({
-                    where: { user_id, statut: { [Op.notIn]: ["delete", "expire"] } },
-                    attributes: ["post_id", "objet"],
-                    order: [["createdAt", "DESC"]],
-                    raw: true
-                }),
-                AppelOffreConsultation.findAll({
-                    where: { user_id, statut: { [Op.notIn]: ["delete", "expire"] } },
-                    attributes: ["post_id", "objet"],
-                    order: [["createdAt", "DESC"]],
-                    raw: true
-                }),
-                AppelOffreRecrutementConsultant.findAll({
-                    where: { user_id, statut: { [Op.notIn]: ["delete", "expire"] } },
-                    attributes: ["post_id", "objet"],
-                    order: [["createdAt", "DESC"]],
-                    raw: true
-                }),
-            ]);
-
-
-
-            // Supposons que ce sont tes tableaux
-            const allTables = [
-                offresEmploi,
-                appelsOffres,
-                amis,
-                consultations,
-                recrutements
-            ];
-
-            // 1️⃣ Fusionner tous les tableaux
-            let toutesOffres = allTables.flat();
-
-            // 2️⃣ Supprimer doublons par post_id
-            const seen = new Set();
-            toutesOffres = toutesOffres.filter(offre => {
-                // si offre n'a pas de post_id, ignore
-                if (!offre.post_id) return false;
-
-                if (seen.has(offre.post_id)) {
-                    return false; // doublon
-                } else {
-                    seen.add(offre.post_id);
-                    return true; // premier rencontré
+            const totalQcm = await sequelize.query(
+                `
+            SELECT COUNT(*) as total
+            FROM (
+                SELECT offreId as id FROM examen_qcms WHERE post_id = :post_id
+                UNION
+                SELECT offre_id as id FROM qcm_offres WHERE qcm_id = :post_id
+            ) as t
+            `,
+                {
+                    replacements: { post_id },
+                    type: QueryTypes.SELECT
                 }
-            });
-
-            // 3️⃣ Facultatif : renommer "objet" en "titre"
-            toutesOffres = toutesOffres.map(offre => ({
-                post_id: offre.post_id,
-                titre: offre.objet || offre.titre || "Titre non trouvé"
-            }));
+            );
 
 
+            const toutesOffre = await sequelize.query(
+                `
+            SELECT post_id, objet as titre
+            FROM offres_emploi
+            WHERE user_id = :user_id
+            AND statut NOT IN ('delete','expire')
+
+            UNION
+
+            SELECT post_id, objet as titre
+            FROM appel_offres
+            WHERE user_id = :user_id
+            AND statut NOT IN ('delete','expire')
+
+            UNION
+
+            SELECT post_id, objet as titre
+            FROM appel_offres_ami
+            WHERE user_id = :user_id
+            AND statut NOT IN ('delete','expire')
+            
+            UNION
+
+            SELECT post_id, objet as titre
+            FROM appel_offres_consultation
+            WHERE user_id = :user_id
+            AND statut NOT IN ('delete','expire')
+
+            UNION
+
+            SELECT post_id, objet as titre
+            FROM appel_offres_recrutement_consultant
+            WHERE user_id = :user_id
+            AND statut NOT IN ('delete','expire')
+
+            ORDER BY post_id DESC
+            LIMIT :limit OFFSET :offset
+            `,
+                {
+                    replacements: {
+                        user_id,
+                        limit: Number(limit),
+                        offset: Number(offsetOffre)
+                    },
+                    type: QueryTypes.SELECT
+                }
+            );
+
+            const totalOffres = await sequelize.query(
+                `
+                    SELECT COUNT(*) as total FROM (
+                            SELECT post_id FROM offres_emploi
+                            WHERE user_id = :user_id
+                            AND statut NOT IN ('delete','expire')
+
+                            UNION
+
+                            SELECT post_id FROM appel_offres
+                            WHERE user_id = :user_id
+                            AND statut NOT IN ('delete','expire')
+
+                            UNION
+
+                            SELECT post_id FROM appel_offres_ami
+                            WHERE user_id = :user_id
+                            AND statut NOT IN ('delete','expire')
+
+                            UNION
+
+                            SELECT post_id FROM appel_offres_consultation
+                            WHERE user_id = :user_id
+                            AND statut NOT IN ('delete','expire')
+
+                            UNION
+
+                            SELECT post_id FROM appel_offres_recrutement_consultant
+                            WHERE user_id = :user_id
+                            AND statut NOT IN ('delete','expire')
+                    ) as t
+            `,
+                {
+                    replacements: { user_id },
+                    type: QueryTypes.SELECT
+                }
+            );
 
             return {
                 status: "success",
                 data: {
-                    toutesOffres: toutesOffres,
-                    offresAvecTitre: offresAvecTitre
+                    toutesOffres: toutesOffre,
+                    offresAvecTitre: offresQcm,
+                    total: totalQcm[0].total,
+                    offrePage: totalOffres[0].total
                 }
             };
 
 
+
+
+        } catch (err) {
+            console.error("Erreur qcm_candidats_exame_detail:", err);
+            return {
+                status: "error",
+                message: err.message,
+            };
+        }
+    },
+    get_offre_by_post_id_search: async (data) => {
+        try {
+
+            console.log(data)
+
+            const {
+                user_id,
+                post_id,
+                search,
+                offresearch,
+                page = 1,
+                pageNumberOffre = 1,
+                limit = 10
+            } = data;
+
+            if (!user_id || !post_id) {
+                return {
+                    status: "error",
+                    message: "Paramètres manquants",
+                };
+            }
+
+            const offsetQcm = (page - 1) * limit;
+            const offsetOffre = (pageNumberOffre - 1) * limit;
+
+            const searchValue = search ? `%${search}%` : null;
+            const offreSearchValue = offresearch ? `%${offresearch}%` : null
+
+            const offresQcm = await sequelize.query(
+                `
+                    SELECT post_id, titre
+                    FROM (
+
+                        SELECT post_id, objet AS titre, createdAt
+                        FROM offres_emploi
+
+                        UNION ALL
+
+                        SELECT post_id, objet AS titre, createdAt
+                        FROM appel_offres
+
+                        UNION ALL
+
+                        SELECT post_id, objet AS titre, createdAt
+                        FROM appel_offres_ami
+
+                        UNION ALL
+
+                        SELECT post_id, objet AS titre, createdAt
+                        FROM appel_offres_consultation
+
+                        UNION ALL
+
+                        SELECT post_id, objet AS titre, createdAt
+                        FROM appel_offres_recrutement_consultant
+
+                    ) annonces
+
+                    WHERE post_id IN (
+                        SELECT offreId FROM examen_qcms WHERE post_id = :post_id
+                        UNION
+                        SELECT offre_id FROM qcm_offres WHERE qcm_id = :post_id
+                    )
+
+                    ${search ? "AND titre LIKE :search" : ""}
+
+                    ORDER BY createdAt DESC
+                    LIMIT :limit OFFSET :offset
+`,
+                {
+                    replacements: {
+                        post_id,
+                        search: searchValue,
+                        limit: Number(limit),
+                        offset: Number(offsetQcm)
+                    },
+                    type: QueryTypes.SELECT
+                });
+
+
+            const totalQcm = await sequelize.query(
+                `
+                    SELECT COUNT(*) as total
+                    FROM (
+
+                    SELECT post_id, objet AS titre
+                    FROM offres_emploi
+
+                    UNION ALL
+
+                    SELECT post_id, objet AS titre
+                    FROM appel_offres
+
+                    UNION ALL
+
+                    SELECT post_id, objet AS titre
+                    FROM appel_offres_ami
+
+                    UNION ALL
+
+                    SELECT post_id, objet AS titre
+                    FROM appel_offres_consultation
+
+                    UNION ALL
+
+                    SELECT post_id, objet AS titre
+                    FROM appel_offres_recrutement_consultant
+
+                    ) annonces
+
+                    WHERE post_id IN (
+                    SELECT offreId FROM examen_qcms WHERE post_id = :post_id
+                    UNION
+                    SELECT offre_id FROM qcm_offres WHERE qcm_id = :post_id
+                    )
+
+                    ${search ? "AND titre LIKE :search" : ""}
+            `,
+                {
+                    replacements: {
+                        post_id,
+                        search: searchValue
+                    },
+                    type: QueryTypes.SELECT
+                }
+            );
+
+
+            const toutesOffre = await sequelize.query(
+                `
+                    SELECT *
+                    FROM (
+
+                    SELECT post_id, objet as titre
+                    FROM offres_emploi
+                    WHERE user_id = :user_id
+                    AND statut NOT IN ('delete','expire')
+
+                    UNION
+
+                    SELECT post_id, objet as titre
+                    FROM appel_offres
+                    WHERE user_id = :user_id
+                    AND statut NOT IN ('delete','expire')
+
+                    UNION
+
+                    SELECT post_id, objet as titre
+                    FROM appel_offres_ami
+                    WHERE user_id = :user_id
+                    AND statut NOT IN ('delete','expire')
+
+                    UNION
+
+                    SELECT post_id, objet as titre
+                    FROM appel_offres_consultation
+                    WHERE user_id = :user_id
+                    AND statut NOT IN ('delete','expire')
+
+                    UNION
+
+                    SELECT post_id, objet as titre
+                    FROM appel_offres_recrutement_consultant
+                    WHERE user_id = :user_id
+                    AND statut NOT IN ('delete','expire')
+
+                    ) annonces
+
+                    WHERE 1=1
+                    ${offresearch ? "AND titre LIKE :offresearch" : ""}
+
+                    ORDER BY post_id DESC
+                    LIMIT :limit OFFSET :offset
+            `,
+                {
+                    replacements: {
+                        user_id,
+                        offresearch: offreSearchValue,
+                        limit: Number(limit),
+                        offset: Number(offsetOffre)
+                    },
+                    type: QueryTypes.SELECT
+                }
+            );
+
+            const totalOffres = await sequelize.query(
+                `
+                    SELECT COUNT(*) as total
+                    FROM (
+
+                    SELECT post_id, objet as titre
+                    FROM offres_emploi
+                    WHERE user_id = :user_id
+                    AND statut NOT IN ('delete','expire')
+
+                    UNION
+
+                    SELECT post_id, objet as titre
+                    FROM appel_offres
+                    WHERE user_id = :user_id
+                    AND statut NOT IN ('delete','expire')
+
+                    UNION
+
+                    SELECT post_id, objet as titre
+                    FROM appel_offres_ami
+                    WHERE user_id = :user_id
+                    AND statut NOT IN ('delete','expire')
+
+                    UNION
+
+                    SELECT post_id, objet as titre
+                    FROM appel_offres_consultation
+                    WHERE user_id = :user_id
+                    AND statut NOT IN ('delete','expire')
+
+                    UNION
+
+                    SELECT post_id, objet as titre
+                    FROM appel_offres_recrutement_consultant
+                    WHERE user_id = :user_id
+                    AND statut NOT IN ('delete','expire')
+
+                    ) annonces
+
+                    WHERE 1=1
+                    ${offresearch ? "AND titre LIKE :offresearch" : ""}
+
+            `,
+                {
+                    replacements: {
+                        user_id,
+                        offresearch: offreSearchValue
+                    },
+                    type: QueryTypes.SELECT
+                }
+            );
+
+            return {
+                status: "success",
+                data: {
+                    toutesOffres: toutesOffre,
+                    offresAvecTitre: offresQcm,
+                    total: totalQcm[0].total,
+                    offreTotal: totalOffres[0].total
+                }
+            };
 
 
         } catch (err) {
@@ -2325,22 +2920,46 @@ module.exports = {
         }
     },
 
-    entretiens: async (user_id) => {
+    entretiens: async (data) => {
         try {
 
 
+            const { user_id, page = 1, limit = 10 } = data;
 
-            const enretien = await EntretienCandidat.findAll({
-                where: { user_id },
+            if (!user_id) {
+                return {
+                    status: "error",
+                    message: "user_id manquant",
+                };
+            }
+
+            // 🧮 Pagination
+            const currentPage = parseInt(page) || 1;
+            const pageSize = parseInt(limit) || 10;
+            const offset = (currentPage - 1) * pageSize;
+
+
+            // 📊 Requête avec count + rows
+            const { count, rows } = await EntretienCandidat.findAndCountAll({
+                where: {
+                    user_id,
+                    status: {
+                        [Op.notIn]: ["REMOVED_BY_COMPANY", "REMOVED_BY_CANDIDAT"]
+                    }
+                },
                 order: [["createdAt", "DESC"]],
+                limit: pageSize,
+                offset: offset,
                 raw: true
             });
 
-
             const entretiensFormates = await Promise.all(
-                enretien.map(async (item) => {
+                rows.map(async (item) => {
+
 
                     const candidatInfo = await getCandidatinfo(item.candidat_id);
+
+                    const offre_info = await getEntrepriseIDbyAnnonceID(item.offre)
 
                     return {
                         id: item.id,
@@ -2348,6 +2967,7 @@ module.exports = {
                         candidat_id: item.candidat_id,
                         email: candidatInfo.email,
                         offre: item.offre,
+                        titre: offre_info?.title || "Indisponible",
                         date_entretien: formatDateHeure(item.date, item.heure),
                         duree: item.duree || null,
                         responsable: item.responsable,
@@ -2367,7 +2987,7 @@ module.exports = {
             } else {
                 return {
                     status: "success",
-                    total: entretiensFormates.length,
+                    total: count,
                     data: entretiensFormates,
                 }
 
@@ -2379,6 +2999,134 @@ module.exports = {
 
         } catch (err) {
             console.error("Erreur getOffre:", err);
+            throw err;
+        }
+    },
+    entretiens_search: async (data) => {
+        try {
+
+            const { user_id, search = "", filter = [], page = 1, limit = 10 } = data;
+
+            if (!user_id) {
+                return {
+                    status: "error",
+                    message: "user_id manquant",
+                };
+            }
+
+            const currentPage = parseInt(page) || 1;
+            const pageSize = parseInt(limit) || 10;
+            const offset = (currentPage - 1) * pageSize;
+
+            // 🔎 Construction dynamique du WHERE
+            let whereClause = `
+            ec.user_id = :user_id
+            AND ec.status NOT IN ('REMOVED_BY_COMPANY', 'REMOVED_BY_CANDIDAT')
+        `;
+
+            // Recherche sur le nom
+            if (search && search.trim() !== "") {
+                whereClause += `
+                AND u.nom LIKE :searchLike
+            `;
+            }
+
+            // Filtre sur le status
+            if (filter && filter.length > 0) {
+                whereClause += `
+                AND ec.status IN (:filter)
+            `;
+            }
+
+
+              
+            // 📊 Récupération des données
+            const rows = await sequelize.query(
+                `
+                    SELECT 
+                        ec.id,
+                        ec.candidat_id,
+                        ec.offre,
+                        ec.duree,
+                        ec.date,
+                        ec.heure,
+                        ec.responsable,
+                        ec.status,
+                        ec.post_id,
+                        ec.type,
+                        u.nom,
+                        u.email
+                    FROM entretiens_candidats ec
+                    LEFT JOIN users u ON u.id = ec.candidat_id
+                    WHERE ${whereClause}
+                    ORDER BY ec.createdAt DESC
+                    LIMIT :limit OFFSET :offset
+              `,
+                {
+                    replacements: {
+                        user_id,
+                        searchLike: `%${search}%`,
+                        filter,
+                        limit: pageSize,
+                        offset
+                    },
+                    type: QueryTypes.SELECT
+                }
+            );
+
+            // 📊 Count total pour pagination
+            const countResult = await sequelize.query(
+                `
+            SELECT COUNT(*) as total
+            FROM entretiens_candidats ec
+            LEFT JOIN users u ON u.id = ec.candidat_id
+            WHERE ${whereClause}
+            `,
+                {
+                    replacements: {
+                        user_id,
+                        searchLike: `%${search}%`,
+                        filter
+                    },
+                    type: QueryTypes.SELECT
+                }
+            );
+
+            const entretiensFormates = await Promise.all(
+                rows.map(async (item) => {
+
+
+                    const candidatInfo = await getCandidatinfo(item.candidat_id);
+
+                    const offre_info = await getEntrepriseIDbyAnnonceID(item.offre)
+
+                    return {
+                        id: item.id,
+                        nom: candidatInfo.nom,
+                        candidat_id: item.candidat_id,
+                        email: candidatInfo.email,
+                        offre: item.offre,
+                        titre: offre_info?.title || "Indisponible",
+                        date_entretien: formatDateHeure(item.date, item.heure),
+                        duree: item.duree || null,
+                        responsable: item.responsable,
+                        status: item.status,
+                        entr_id: item.post_id,
+                        type: item.type,
+                    };
+                })
+            );
+
+
+            return {
+                status: "success",
+                total: countResult[0].total,
+                data: entretiensFormates.length > 0 ? entretiensFormates : [],
+            };
+
+
+        } catch (err) {
+            console.error("Erreur entretiens:", err);
             throw err;
         }
     },
@@ -2442,32 +3190,25 @@ module.exports = {
         }
 
     },
-    mes_appel_offre_save: async (user_id, page = 1) => {
+    mes_appel_offre_save: async (data) => {
         try {
-            const limit = 12;
+            const { user_id, page = 1, limit = 12 } = data;
+
+            if (!user_id) throw new Error("user_id manquant");
+
             const offset = (page - 1) * limit;
 
-            const get_offre = await SaveAnnonce.findAll({
-                where: { user_id },
+            const { rows: get_offre, count: total } = await SaveAnnonce.findAndCountAll({
+                where: { user_id }, // simple valeur
                 order: [["createdAt", "DESC"]],
-                limit,
-                offset,
+                limit: Number(limit),
+                offset: Number(offset),
                 raw: true
             });
 
-            if (!get_offre || get_offre.length === 0) {
-                return {
-                    status: "success",
-                    total: 0,
-                    data: [],
-                };
-            }
-
-            // 🔹 Parcours du tableau + ajout de la ville
-            const data = await Promise.all(
+            const dataWithVille = await Promise.all(
                 get_offre.map(async (item) => {
                     const villeInfo = await getVilleByAnnonceID(item.post_id);
-
                     return {
                         ...item,
                         ville: villeInfo?.ville || null,
@@ -2477,8 +3218,55 @@ module.exports = {
 
             return {
                 status: "success",
-                total: data.length,
-                data,
+                total,
+                data: dataWithVille,
+            };
+
+        } catch (err) {
+            console.error("Erreur saveAppelOffre:", err);
+            throw err;
+        }
+    },
+    mes_appel_offre_save_search: async (data) => {
+        try {
+            const { user_id, search = "", filter = [], page = 1, limit = 10 } = data;
+
+            if (!user_id) throw new Error("user_id manquant");
+
+            const offset = (page - 1) * limit;
+
+            // 🔹 Construire le where dynamique
+            const whereClause = { user_id };
+
+            // 🔹 Si un filtre de statut existe
+            if (filter.length > 0) {
+                whereClause.statut = filter;
+            }
+
+            // 🔹 Pour la recherche, on doit passer par un include sur l'annonce
+            const { rows: get_offre, count: total } = await SaveAnnonce.findAndCountAll({
+                where: {
+                    user_id,
+                    ...(filter.length > 0 ? { statut: filter } : {}), // filtre si présent
+                    ...(search ? { titre: { [Op.like]: `%${search}%` } } : {}) // recherche sur le titre
+                },
+                order: [["createdAt", "DESC"]],
+                limit: Number(limit),
+                offset: Number(offset),
+                raw: true,
+                nest: true // permet de garder l'objet include bien structuré
+            });
+
+            // 🔹 Ajouter la ville (optionnel si l'include n'a pas suffit)
+            const dataWithVille = get_offre.map(item => ({
+                ...item,
+                ville: item.OffreEmploi?.lieu || null
+            }));
+
+            return {
+                status: "success",
+                total,
+                data: dataWithVille
             };
 
         } catch (err) {
@@ -2487,45 +3275,75 @@ module.exports = {
         }
     },
 
-    mes_candidats_save: async (user_id, page = 1) => {
+    mes_candidats_save: async (data) => {
         try {
-            const limit = 12;
+
+
+            const { user_id, page = 1, limit = 10 } = data;
+
+            if (!user_id) {
+                throw new Error("user_id manquant");
+            }
+
             const offset = (page - 1) * limit;
 
-            const savedCandidats = await EntrepriseSaveCandidats.findAll({
-                where: { user_id },
-                order: [["createdAt", "DESC"]],
-                limit,
-                offset,
-                raw: true
-            });
+            const candidats = await sequelize.query(
+                `
+            SELECT 
+                esc.candidate_id,
+                esc.createdAt,
+                u.nom,
+                u.email,
+                u.role
+            FROM entreprise_save_candidats esc
+            LEFT JOIN users u 
+                ON u.id = esc.candidate_id
+            WHERE esc.user_id = :user_id
+            ORDER BY esc.createdAt DESC
+            LIMIT :limit OFFSET :offset
+            `,
+                {
+                    replacements: {
+                        user_id,
+                        limit: Number(limit),
+                        offset: Number(offset)
+                    },
+                    type: QueryTypes.SELECT
+                }
+            );
 
-            if (!savedCandidats || savedCandidats.length === 0) {
+
+            const totalResult = await sequelize.query(
+                `
+            SELECT COUNT(*) as total
+            FROM entreprise_save_candidats
+            WHERE user_id = :user_id
+            `,
+                {
+                    replacements: { user_id },
+                    type: QueryTypes.SELECT
+                }
+            );
+
+            const total = totalResult[0].total;
+
+
+
+
+            if (!candidats || candidats.length === 0) {
                 return {
                     status: "success",
                     total: 0,
-                    data: [],
+                    data: []
                 };
             }
-
-            // 🔹 Mapper chaque candidat et récupérer ses infos
-            const data = await Promise.all(
-                savedCandidats.map(async (item) => {
-                    const candidatInfo = await getCandidatinfo(item.candidate_id, user_id);
-
-                    return {
-                        ...item,
-                        ...candidatInfo
-                    };
-                })
-            );
 
 
 
             return {
                 status: "success",
-                total: data.length,
-                data,
+                total,        // nombre total de candidats sauvegardés
+                data: candidats
             };
 
         } catch (err) {
@@ -2534,15 +3352,93 @@ module.exports = {
         }
     },
 
-    get_notification_preference: async (user_id) => {
+    mes_candidats_save_search: async (data) => {
         try {
+            const { user_id, search = "", page = 1, limit = 10 } = data;
+
+            if (!user_id) {
+                throw new Error("user_id manquant");
+            }
+
+            const offset = (page - 1) * limit;
+
+            // 🔹 Condition de recherche
+            let searchCondition = "";
+            if (search && search.trim() !== "") {
+                searchCondition = `AND u.nom LIKE :search`;
+            }
+
+            const candidats = await sequelize.query(
+                `
+            SELECT 
+                esc.candidate_id,
+                esc.createdAt,
+                u.nom,
+                u.email,
+                u.role
+            FROM entreprise_save_candidats esc
+            LEFT JOIN users u 
+                ON u.id = esc.candidate_id
+            WHERE esc.user_id = :user_id
+            ${searchCondition}
+            ORDER BY esc.createdAt DESC
+            LIMIT :limit OFFSET :offset
+            `,
+                {
+                    replacements: {
+                        user_id,
+                        search: `%${search}%`,
+                        limit: Number(limit),
+                        offset: Number(offset)
+                    },
+                    type: QueryTypes.SELECT
+                }
+            );
+
+            const totalResult = await sequelize.query(
+                `
+            SELECT COUNT(*) as total
+            FROM entreprise_save_candidats esc
+            LEFT JOIN users u 
+                ON u.id = esc.candidate_id
+            WHERE esc.user_id = :user_id
+            ${searchCondition}
+            `,
+                {
+                    replacements: {
+                        user_id,
+                        search: `%${search}%`
+                    },
+                    type: QueryTypes.SELECT
+                }
+            );
+
+
+            const total = totalResult[0]?.total || 0;
+            return {
+                status: "success",
+                total,
+                data: candidats || []
+            };
+
+
+        } catch (err) {
+            console.error("Erreur mes_candidats_save:", err);
+            throw err;
+        }
+    },
+    get_notification_preference: async ({ user_id }) => {
+        try {
+
+
+            if (!user_id) {
+                throw new Error("user_id manquant");
+            }
 
             const get_offre = await NotificationPreference.findOne({
                 where: { user_id },
                 raw: true
             })
-
-
 
             if (!get_offre) {
                 return {
@@ -2566,8 +3462,11 @@ module.exports = {
             throw err;
         }
     },
-    get_notification: async (user_id) => {
+    get_notification: async (data) => {
         try {
+
+            const { user_id, page = 1, limit = 10 } = data;
+
             if (!user_id) {
                 return {
                     status: "error",
@@ -2575,27 +3474,46 @@ module.exports = {
                 };
             }
 
+            const pageNumber = Number(page);
+            const limitNumber = Number(limit);
+            const offset = (pageNumber - 1) * limitNumber;
+
             // 📥 Notifications reçues
-            const received = await Notification.findAll({
+            const received = await Notification.findAndCountAll({
                 where: { receiver_id: user_id },
                 order: [["createdAt", "DESC"]],
+                limit: limitNumber,
+                offset: offset,
                 raw: true,
             });
 
             // 📤 Notifications envoyées
-            const sent = await Notification.findAll({
+            const sent = await Notification.findAndCountAll({
                 where: { sender_id: user_id },
                 order: [["createdAt", "DESC"]],
+                limit: limitNumber,
+                offset: offset,
                 raw: true,
             });
 
             return {
                 status: "success",
                 data: {
-                    received, // notifications reçues
-                    sent,     // notifications envoyées
+                    received: {
+                        total: received.count,
+                        page: pageNumber,
+                        limit: limitNumber,
+                        rows: received.rows
+                    },
+                    sent: {
+                        total: sent.count,
+                        page: pageNumber,
+                        limit: limitNumber,
+                        rows: sent.rows
+                    }
                 },
             };
+
 
         } catch (err) {
             console.error("Erreur get_notification:", err);
@@ -2641,22 +3559,37 @@ module.exports = {
             throw err;
         }
     },
-    get_utilisateurs: async (user_id) => {
+    get_utilisateurs: async (data) => {
         try {
 
-            const get_offre = await AjouterCollaborateur.findAll({
+            const { user_id, page = 1, limit = 10 } = data;
+
+            if (!user_id) {
+                return {
+                    status: "error",
+                    message: "user_id manquant"
+                };
+            }
+
+            const pageNumber = Number(page);
+            const limitNumber = Number(limit);
+            const offset = (pageNumber - 1) * limitNumber;
+            const { rows, count } = await AjouterCollaborateur.findAndCountAll({
                 where: {
                     user_id,
                     status: { [Op.ne]: "supprime" }   // 🚫 exclure supprimés
                 },
                 attributes: ["id", "nom", "role", "email", "accepted"],
                 order: [["createdAt", "DESC"]],
+                limit: limitNumber,
+                offset: offset,
                 raw: true
             })
 
+            console.log(count)
+            console.log(rows)
 
-
-            if (!get_offre) {
+            if (!rows) {
                 return {
                     status: "success",
                     total: 0,
@@ -2665,12 +3598,74 @@ module.exports = {
             } else {
                 return {
                     status: "success",
-                    total: get_offre.length,
-                    data: get_offre,
+                    total: count,
+                    page: pageNumber,
+                    limit: limitNumber,
+                    data: rows
                 };
             }
 
 
+
+
+        } catch (err) {
+            console.error("Erreur saveAppelOffre:", err);
+            throw err;
+        }
+    },
+    get_utilisateurs_search: async (data) => {
+        try {
+
+
+            const { user_id, search = "", filter = [], page = 1, limit = 10 } = data;
+
+            if (!user_id) {
+                return {
+                    status: "error",
+                    message: "user_id manquant"
+                };
+            }
+
+            const pageNumber = Number(page);
+            const limitNumber = Number(limit);
+            const offset = (pageNumber - 1) * limitNumber;
+
+            // 🔹 Construction dynamique du where
+            const whereClause = {
+                user_id,
+                status: { [Op.ne]: "supprime" }
+            };
+
+            // 🔎 Recherche sur le nom
+            if (search && search.trim().length >= 3) {
+                whereClause.nom = {
+                    [Op.like]: `%${search.trim()}%`
+                };
+            }
+
+            // 🧩 Filtre sur le status
+            if (Array.isArray(filter) && filter.length > 0) {
+                whereClause.accepted = {
+                    [Op.in]: filter
+                };
+            }
+
+            const { rows, count } = await AjouterCollaborateur.findAndCountAll({
+                where: whereClause,
+                attributes: ["id", "nom", "role", "email", "accepted"],
+                order: [["createdAt", "DESC"]],
+                limit: limitNumber,
+                offset: offset,
+                raw: true
+            });
+
+            return {
+                status: "success",
+                total: count,
+                page: pageNumber,
+                limit: limitNumber,
+                data: rows
+            };
 
 
         } catch (err) {
@@ -5959,19 +6954,18 @@ module.exports = {
         }
     },
 
-
     qcm_candidats_all: async (data) => {
         try {
-            const { user_id, post_id } = data;
+            const { user_id, post_id, page = 1, limit = 10 } = data;
 
             if (!user_id || !post_id) {
                 throw new Error("Paramètres manquants");
             }
-
-
+            // 🔹 Calcul de l'offset pour la pagination
+            const offset = (Number(page) - 1) * Number(limit);
 
             // 🔹 1️⃣ Récupérer tous les candidats assignés
-            const candidatsQcm = await QcmCandidats.findAll({
+            const { rows: candidatsQcm, count: totalCandidats } = await QcmCandidats.findAndCountAll({
                 where: {
                     qcm_id: post_id,
                     status: {
@@ -5979,14 +6973,22 @@ module.exports = {
                     }
                 },
                 attributes: ["candidat_id", "status"],
+                limit: Number(limit),
+                offset: offset,
+                order: [["assigned_at", "DESC"]],
                 raw: true,
             });
+
+
 
 
             if (!candidatsQcm.length) {
                 return {
                     status: "success",
                     data: [],
+                    total: 0,
+                    page: Number(page),
+                    limit: Number(limit)
                 };
             }
 
@@ -6011,8 +7013,6 @@ module.exports = {
             // 🔹 5️⃣ Construire la réponse finale
             const candidats_liste = await Promise.all(
                 candidatsQcm.map(async (item) => {
-
-
 
                     const candidatInfo = await getCandidatinfo(item.candidat_id);
                     const exam = examensMap.get(item.candidat_id);
@@ -6059,6 +7059,9 @@ module.exports = {
             return {
                 status: "success",
                 data: candidats_liste,
+                total: totalCandidats,
+                page: Number(page),
+                limit: Number(limit)
             };
 
         } catch (err) {
@@ -6070,6 +7073,153 @@ module.exports = {
         }
     },
 
+    qcm_candidats_all_search: async (data) => {
+        try {
+
+            console.log(data)
+
+            const { user_id, post_id, search = "", filter = [], page = 1, limit = 10 } = data;
+
+            if (!user_id || !post_id) {
+                throw new Error("Paramètres manquants");
+            }
+
+            const offset = (Number(page) - 1) * Number(limit);
+
+            // 🔹 Construire les conditions dynamiques pour le filtre status
+            let statusCondition = "status NOT IN ('DELETED_BY_CANDIDAT','REMOVED_BY_COMPANY')";
+            if (filter.length > 0) {
+                const filterStr = filter.map(f => `'${f}'`).join(",");
+                statusCondition = `status IN (${filterStr})`;
+            }
+
+
+
+            // 🔹 1️⃣ Requête principale avec jointure sur la table user pour recherche sur le nom
+            const candidats = await sequelize.query(
+                `
+            SELECT qc.candidat_id, qc.status, u.nom, u.email
+            FROM qcm_candidats qc
+            INNER JOIN users u ON u.id = qc.candidat_id
+            WHERE qc.qcm_id = :post_id
+            AND ${statusCondition}
+            AND (:search = '' OR LOWER(u.nom) LIKE LOWER(:searchLike))
+            ORDER BY qc.assigned_at DESC
+            LIMIT :limit OFFSET :offset
+            `,
+                {
+                    replacements: {
+                        post_id,
+                        limit: Number(limit),
+                        offset: Number(offset),
+                        search,
+                        searchLike: `%${search}%`
+                    },
+                    type: QueryTypes.SELECT
+                }
+            );
+
+
+
+            // 🔹 2️⃣ Récupérer le total pour pagination
+            const totalResult = await sequelize.query(
+                `
+                    SELECT COUNT(*) AS total
+                    FROM qcm_candidats qc
+                    INNER JOIN Users u ON u.id = qc.candidat_id
+                    WHERE qc.qcm_id = :post_id
+                    AND ${statusCondition}
+                    AND (:search = '' OR LOWER(u.nom) LIKE LOWER(:searchLike))
+            `,
+                {
+                    replacements: { post_id, search, searchLike: `%${search}%` },
+                    type: QueryTypes.SELECT
+                }
+            );
+
+            const totalCandidats = totalResult[0]?.total || 0;
+
+            // 🔹 3️⃣ Récupérer tous les examens en une seule requête
+            const userIds = candidats.map(c => c.candidat_id);
+            const examens = userIds.length
+                ? await sequelize.query(
+                    `
+                SELECT user_id, totalTimeSeconds, score, antiFraudeLogs
+                FROM qcm_examens_candidats
+                WHERE qcm_id = :post_id
+                AND user_id IN (:userIds)
+                `,
+                    {
+                        replacements: { post_id, userIds },
+                        type: QueryTypes.SELECT
+                    }
+                )
+                : [];
+
+            const examensMap = new Map(examens.map(exam => [exam.user_id, exam]));
+
+            // 🔹 4️⃣ Récupérer l'offre du QCM
+            const offreID = await sequelize.query(
+                `
+            SELECT offre_id
+            FROM qcm_offres
+            WHERE qcm_id = :post_id
+            LIMIT 1
+            `,
+                {
+                    replacements: { post_id },
+                    type: QueryTypes.SELECT
+                }
+            );
+
+            const offre_id = offreID[0]?.offre_id ?? null;
+
+            // 🔹 5️⃣ Construire la réponse finale
+            const candidats_liste = candidats.map(item => {
+                const exam = examensMap.get(item.candidat_id);
+
+                let antiFraudeCount = 0;
+                if (exam?.antiFraudeLogs) {
+                    if (Array.isArray(exam.antiFraudeLogs)) {
+                        antiFraudeCount = exam.antiFraudeLogs.length;
+                    } else {
+                        try {
+                            const parsed = JSON.parse(exam.antiFraudeLogs);
+                            antiFraudeCount = Array.isArray(parsed) ? parsed.length : 0;
+                        } catch {
+                            antiFraudeCount = 0;
+                        }
+                    }
+                }
+
+                return {
+                    user_id: item.candidat_id,
+                    offre_id,
+                    email: item.email ?? null,
+                    nom: item.nom ?? null,
+                    status: item.status,
+                    score: exam?.score ?? null,
+                    tmp: exam?.totalTimeSeconds ?? 0,
+                    antiFraudeLogs: antiFraudeCount
+                };
+            });
+
+            return {
+                status: "success",
+                data: candidats_liste,
+                total: totalCandidats,
+                page: Number(page),
+                limit: Number(limit)
+            };
+
+        } catch (err) {
+            console.error("Erreur qcm_candidats_all_search:", err);
+            return {
+                status: "error",
+                message: err.message,
+            };
+        }
+    },
     send_qcm_by_candidats_notication: async (data) => {
         try {
 

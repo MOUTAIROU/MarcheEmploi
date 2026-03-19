@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Sidebar from "@/components/SidebarEntreprises/page";
 import MessagesModal from '@/components/modale/NotificationMessageModal/page'
 import api from "@/lib/axiosInstance";
-import { FaCircle } from "react-icons/fa";
+import Pagination from "@/components/PaginationTap/Pagination";
 
 type NotificationMessage = {
     id: number;
@@ -45,11 +45,6 @@ type NotificationItem = {
     updatedAt: string;
 };
 
-const FAKE_NOTIFICATION_TEXT = `
-Vous avez reçu une nouvelle notification concernant votre activité récente.
-Le contenu complet du message est disponible en cliquant sur “Voir plus”.
-Veuillez consulter le détail pour prendre connaissance des informations importantes.
-`;
 
 
 export default function NotificationsEntreprise() {
@@ -63,14 +58,24 @@ export default function NotificationsEntreprise() {
     const [showAll, setShowAll] = useState(false);
     const [selectedMessages, setSelectedMessages] = useState<NotificationMessage[] | null>(null);
 
+    const [pageReceived, setPageReceived] = useState(1);
+    const [pageSend, setPageSend] = useState(1);
+    const [totalReceived, setTotalReceived] = useState(0);
+    const [totalSend, setTotalSend] = useState(0);
+    const limit = 10;
+
     useEffect(() => {
         getNotifications();
     }, []);
 
+    useEffect(() => {
 
+        getNotifications(activeTab === "received" ? pageReceived : pageSend, limit);
+
+    }, [pageReceived,pageSend]);
     const markGroupAsRead = async (notificationId: number) => {
 
-        console.log(notificationId)
+
 
         try {
             await api.patch("/entreprise_get/notifications_mark_as_read", {
@@ -96,16 +101,21 @@ export default function NotificationsEntreprise() {
     };
 
 
-    async function getNotifications() {
+    async function getNotifications(pageNumber: number = 1, limit: number = 10) {
         try {
             setLoading(true);
-            const response = await api.get("/entreprise_get/get_notification");
-
-            console.log(response)
+            const response = await api.get("/entreprise_get/get_notification", {
+                params: {
+                    page: pageNumber,
+                    limit: 10
+                }
+            });
 
             if (response.status === 201 && response.data?.data) {
-                setReceived(response.data.data.received ?? []);
-                setSent(response.data.data.sent ?? []);
+                setReceived(response.data.data.received.rows ?? []);
+                setSent(response.data.data.sent.rows ?? []);
+                setTotalReceived(response.data.data.received.total ?? 0)
+                setTotalSend(response.data.data.sent.total ?? 0)
             }
         } catch (err) {
             console.error(err);
@@ -131,8 +141,7 @@ export default function NotificationsEntreprise() {
 
 
     const normalizeNotifications = (list: NotificationItem[]) => {
-        console.log("Notifications brutes :", list);
-
+      
         return list.map(item => ({
             ...item,
             data: {
@@ -180,6 +189,7 @@ export default function NotificationsEntreprise() {
     const currentList = activeTab === "received" ? received : sent;
     const groupedMessages = normalizeNotifications(currentList);
     const displayedMessages = showAll ? groupedMessages : groupedMessages.slice(0, 5);
+
 
 
     return (
@@ -251,7 +261,7 @@ export default function NotificationsEntreprise() {
                                     {reverse_treatment_msg(lastMessage.message || " ")}
                                 </p>
 
-                */}
+                            */}
 
                                 {/* 💬 APERÇU (FAUX TEXTE UX) */}
 
@@ -260,16 +270,16 @@ export default function NotificationsEntreprise() {
                                     className={`notification-message preview ${isExpanded ? "expanded" : ""}`}
                                 >
 
-                                    {isExpanded ? FAKE_NOTIFICATION_TEXT : getFirstLinePreview(FAKE_NOTIFICATION_TEXT)}
+                                    {isExpanded ? lastMessage.message : getFirstLinePreview(lastMessage.message)}
 
                                     <span
                                         className="inline-see-more"
                                         onClick={() => {
                                             toggleExpanded(group.id ?? index); // bascule entre aperçu / complet
                                             if (!group.is_read && !isExpanded && activeTab == "received") {
-                                                
-                                                    markGroupAsRead(group.id);
-                                                
+
+                                                markGroupAsRead(group.id);
+
                                                 // marque comme lu seulement quand on ouvre
                                             }
                                         }}
@@ -309,6 +319,14 @@ export default function NotificationsEntreprise() {
 
 
                 </div>
+
+
+                <Pagination
+                    page={activeTab === "received" ? pageReceived : pageSend}
+                    setPage={activeTab === "received" ? setPageReceived : setPageSend}
+                    total={activeTab === "received" ? totalReceived : totalSend}
+                    limit={limit}
+                />
 
                 {/* Voir tout */}
                 {groupedMessages.length > 5 && (

@@ -21,11 +21,16 @@ module.exports = {
             const normalizedEmail = email.toLowerCase().trim();
 
             // 🔎 Chercher dans User
-            let user = await User.findOne({ where: { email: normalizedEmail } });
+            let user = await User.findOne(
+                {
+                    where: { email: normalizedEmail }
+                });
             if (user) {
                 console.log("✅ User found in User table:", user.email);
                 return { isInvited: false, ...user.dataValues };
             }
+
+            
 
             // 🔎 Si non trouvé, chercher dans Recruteur
             user = await AjouterCollaborateur.findOne({ where: { email: normalizedEmail } });

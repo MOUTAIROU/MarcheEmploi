@@ -8,6 +8,51 @@ import ActionConfirmeEntretienModal from "@/components/modale/ActionConfimeEntre
 import PopupError from '@/components/modale/Popup/PopupError/page'
 import ActionConfirmeEntretienGroupeModal from "@/components/modale/ActionConfirmeEntretienGroupeModal/page";
 import api from "@/lib/axiosInstance";
+import Pagination from "@/components/PaginationTap/Pagination";
+
+const filters = [
+    "Filtre",
+    "Toutes",
+    "Actives",
+    "En évaluation",
+    "En attente",
+    "Acceptés",
+    "Rejetés"
+] as const;
+
+type FilterKey = typeof filters[number];
+
+const filterStatusMap: Record<FilterKey, string[]> = {
+    "Filtre": [],
+    "Toutes": [
+        "PLANNED",
+        "DONE",
+        "COMPLETED",
+        "CANDIDAT_CONFIRME",
+        "CANDIDAT_REFUSE"
+    ],
+
+    "Actives": [
+        "PLANNED",
+        "CANDIDAT_CONFIRME"
+    ],
+
+    "En évaluation": [
+        "DONE"
+    ],
+
+    "En attente": [
+        "PLANNED"
+    ],
+
+    "Acceptés": [
+        "CANDIDAT_CONFIRME"
+    ],
+
+    "Rejetés": [
+        "CANDIDAT_REFUSE"
+    ]
+};
 
 
 interface EntretienCandidat {
@@ -98,7 +143,6 @@ export default function OffresPage() {
     const [offres, setOffres] = useState<EntretienCandidat[]>([]);
     const [isFilterOpen, setFilterOpen] = useState(false);
     const [isGroupOpen, setGroupOpen] = useState(false);
-    const [selectedFilter, setSelectedFilter] = useState("Toutes");
     const [openRowMenu, setOpenRowMenu] = useState<string | null>(null);
 
     const filterRef = useRef<HTMLDivElement>(null);
@@ -131,6 +175,11 @@ export default function OffresPage() {
 
     const router = useRouter();
 
+
+    const [page, setPage] = useState(1);
+    const [total, setTotal] = useState(0);
+    const limit = 10;
+
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
 
@@ -159,32 +208,36 @@ export default function OffresPage() {
         getOffres();
     }, []);
 
-    async function getOffres() {
+    async function getOffres(pageNumber: number = 1, limit: number = 10) {
 
 
         try {
 
             const response = await api.get(
-                `candidats/entretien/`
+                `candidats/entretien/`, {
+                params: {
+                    page: pageNumber,
+                    limit: limit
+                }
+            }
             );
 
-            const offre = response.data.data; // 👈 objet simple
 
-            if (!offre) return;
+            const { data, status } = response
 
-            console.log(offre)
+            if (status == 201) {
 
-            setOffres(offre)
+                setOffres(data.data)
+                setTotal(data.total)
+                
+            }
 
 
         } catch (error) {
             console.error("Erreur récupération offre :", error);
         }
     }
-    const handleSelect = (value: string) => {
-        setSelectedFilter(value);
-        setFilterOpen(false);
-    };
+
 
 
 
@@ -494,36 +547,7 @@ export default function OffresPage() {
                         </div>
 
                         <div className="actions">
-                            <input
-                                type="text"
-                                placeholder="Rechercher par titre / référence"
-                                className="search"
-                            />
-                            {/* === FILTRE === */}
-                            <div className="filterWrapper" ref={filterRef}>
-                                <button
-                                    className="filter"
-                                    onClick={() => setFilterOpen(!isFilterOpen)}
-                                >
-                                    {selectedFilter}
-                                </button>
 
-                                {isFilterOpen && (
-                                    <div className="dropdown">
-                                        {actionsFiltre.map(
-                                            (option) => (
-                                                <div
-                                                    key={option}
-                                                    className="dropdownItem"
-                                                    onClick={() => handleSelect(option)}
-                                                >
-                                                    {option}
-                                                </div>
-                                            )
-                                        )}
-                                    </div>
-                                )}
-                            </div>
 
 
                             {/* === ACTIONS GROUPEES === */}
@@ -626,6 +650,13 @@ export default function OffresPage() {
                                 ))}
                             </tbody>
                         </table>
+
+                        <Pagination
+                            page={page}
+                            setPage={setPage}
+                            total={total}
+                            limit={limit}
+                        />
 
 
 

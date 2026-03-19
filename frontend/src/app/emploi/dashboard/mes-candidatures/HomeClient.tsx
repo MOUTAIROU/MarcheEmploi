@@ -11,6 +11,57 @@ import Sidebar from "@/components/Sidebar/page";
 import Link from "next/link";
 import api from "@/lib/axiosInstance";
 import { useRouter } from "next/navigation";
+import Pagination from "@/components/PaginationTap/Pagination";
+import PopupSuccess from '@/components/modale/Popup/PopupSuccess/page'
+
+
+
+const filters = [
+    "Filtre",
+    "Toutes",
+    "Actives",
+    "En évaluation",
+    "En attente",
+    "Acceptés",
+    "Rejetés"
+] as const;
+
+type FilterKey = typeof filters[number];
+
+const filterStatusMap: Record<FilterKey, string[]> = {
+    "Filtre": [],
+    "Toutes": [
+        "APPLIED",
+        "WAITING_EXAM",
+        "COMPLETED",
+        "ENTRETIEN_PROGRAMME",
+        "PENDING",
+        "ACCEPTE",
+        "REJETE"
+    ],
+
+    "Actives": [
+        "APPLIED",
+        "WAITING_EXAM"
+    ],
+
+    "En évaluation": [
+        "COMPLETED",
+        "ENTRETIEN_PROGRAMME"
+    ],
+
+    "En attente": [
+        "PENDING"
+    ],
+
+    "Acceptés": [
+        "ACCEPTE"
+    ],
+
+    "Rejetés": [
+        "REJETE"
+    ]
+};
 
 type AnnonceEvent = {
     meta: {
@@ -195,11 +246,22 @@ export default function Home() {
     const groupRef = useRef<HTMLDivElement>(null);
     const rowMenuRef = useRef<HTMLDivElement>(null);
     const [isModalOpenGroupe, setIsModalOpenGroupe] = useState(false);
+    const filterRef = useRef<HTMLDivElement>(null);
 
     const [selectedCandidats, setSelectedCandidats] = useState<string[]>([]);
     const [isError, setError] = useState(false);
-    const [isErrorMsg, setErrorMsg] = useState<string>("");
+    const [selectedFilter, setSelectedFilter] = useState<FilterKey>("Filtre");
 
+    const [search, setSearch] = useState("");
+    const [page, setPage] = useState(1);
+    const [total, setTotal] = useState(0);
+    const limit = 10;
+
+
+    const [errorMsg, setErrorMsg] = useState("");
+    const [successMsg, setSuccessMsg] = useState("");
+    const [showError, setShowError] = useState(false);
+    const [showSuccess, setShowSuccess] = useState(false);
 
     const router = useRouter();
 
@@ -229,12 +291,69 @@ export default function Home() {
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    async function getOffres() {
+
+    useEffect(() => {
+
+        // Cas 1 : aucun filtre et aucune recherche
+        if (!search && selectedFilter === "Filtre") return;
+
+        // Cas 2 : recherche mais moins de 3 caractères
+        if (search && search.trim().length > 0 && search.trim().length < 3) return;
+
+        const timer = setTimeout(() => {
+
+            fetchOffres(search, selectedFilter, page);
+
+        }, 500);
+
+        return () => clearTimeout(timer);
+
+    }, [search, selectedFilter, page]);
+
+
+    useEffect(() => {
+
+        if (search.trim().length !== 0) return;
+        getOffres(page, limit);
+    }, [page]);
+
+    const fetchOffres = async (searchValue: string, filterValue: FilterKey, pageNumber: number) => {
+
+        try {
+
+            const status = filterStatusMap[filterValue];
+
+            const res = await api.get("candidats/annonce_post_id_search", {
+                params: {
+                    search: searchValue,
+                    filter: status,
+                    page: pageNumber,
+                    limit: 10
+                }
+            });
+
+
+            setOffreTab(res.data.data)
+
+            setTotal(res.data.total)
+
+
+        } catch (error) {
+            console.error(error);
+        }
+
+    };
+
+    async function getOffres(pageNumber: number = 1, limit: number = 10) {
 
 
         try {
-            const response = await api.get(
-                `candidats/annonce_post_id/`
+            const response = await api.get(`candidats/annonce_post_id/`, {
+                params: {
+                    page: pageNumber,
+                    limit: 10
+                }
+            }
             );
 
             const offre = response.data.data; // 👈 objet simple
@@ -243,6 +362,8 @@ export default function Home() {
 
 
             setOffreTab(offre)
+
+            setTotal(response.data.total)
 
 
         } catch (error) {
@@ -259,16 +380,9 @@ export default function Home() {
 
         return "🌐 Externe";
     };
-    const getStatutColor = (statut: string) => {
-        switch (statut) {
-            case "En cours": return "gold";
-            case "En attente d’examen": return "orange";
-            case "Examen terminé": return "green";
-            case "Sélectionné pour entretien": return "dodgerblue";
-            case "Accepté / Recruté": return "limegreen";
-            case "Refusé": return "red";
-            default: return "gray";
-        }
+    const handleSelect = (value: FilterKey) => {
+        setSelectedFilter(value);
+        setFilterOpen(false);
     };
 
     const getStatutUI = (statut: string) => {
@@ -281,8 +395,8 @@ export default function Home() {
     const handleGroupAction = (action: ActionGroupeOption) => {
 
         if (selectedOffres.length === 0) {
-            setError(true);
             setErrorMsg("Veuillez sélectionner au moins une offre.");
+            setShowError(true);
             return;
         }
 
@@ -437,8 +551,6 @@ export default function Home() {
 
     const handleGroupeActionType = async (type: string, message: string, post_id: string[]) => {
 
-        console.log(post_id, message)
-
         if (type === "delete") {
 
 
@@ -464,12 +576,21 @@ export default function Home() {
                     {/* Main Content */}
                     <div className="mainContent">
 
-                        {isError && (
+                        {showError && (
                             <PopupError
-                                isOpen={isError}
+                                isOpen={showError}
                                 title="Erreur"
-                                message={isErrorMsg}
-                                onClose={() => setError(false)}
+                                message={errorMsg}
+                                onClose={() => setShowError(false)}
+                            />
+                        )}
+
+                        {showSuccess && (
+                            <PopupSuccess
+                                isOpen={showSuccess}
+                                title="Success"
+                                message={successMsg}
+                                onClose={() => setShowSuccess(false)}
                             />
                         )}
 
@@ -529,7 +650,6 @@ export default function Home() {
 
                                     case "notification":
 
-                                        console.log('toto', selectedCandidatId, newStatus)
                                         if (selectedCandidatId) {
 
 
@@ -556,6 +676,47 @@ export default function Home() {
                         <div className="titre-content"> <h3>Mes candidatures</h3></div>
 
                         <div className="filterWrapper" ref={groupRef}>
+
+                            <div className="searchWrapper">
+
+                                <input
+                                    type="text"
+                                    placeholder="Rechercher par titre / référence"
+                                    className="search"
+                                    value={search}
+                                    onChange={(e) => {
+                                        setSearch(e.target.value);
+                                        setPage(1);
+                                    }}
+                                />
+
+                            </div>
+
+                            {/* === FILTRE === */}
+                            <div className="filterWrapper" ref={filterRef}>
+                                <button
+                                    className="filter"
+                                    onClick={() => setFilterOpen(!isFilterOpen)}
+                                >
+                                    {selectedFilter}
+                                </button>
+
+                                {isFilterOpen && (
+                                    <div className="dropdown">
+                                        {filters.map((option) => (
+                                            <div
+                                                key={option}
+                                                className="dropdownItem"
+                                                onClick={() => handleSelect(option)}
+                                            >
+                                                {option}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+
                             <button
                                 className="groupAction"
                                 onClick={() => {
@@ -667,6 +828,13 @@ export default function Home() {
                                 })}
                             </tbody>
                         </table>
+
+                        <Pagination
+                            page={page}
+                            setPage={setPage}
+                            total={total}
+                            limit={limit}
+                        />
 
 
 

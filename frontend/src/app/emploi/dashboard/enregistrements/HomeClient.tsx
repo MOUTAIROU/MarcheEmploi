@@ -9,6 +9,8 @@ import PopupError from '@/components/modale/Popup/PopupError/page'
 import "./style.css";
 import Sidebar from "@/components/Sidebar/page";
 import api from "@/lib/axiosInstance";
+import PopupSuccess from '@/components/modale/Popup/PopupSuccess/page'
+import Pagination from "@/components/PaginationTap/Pagination";
 
 const actions = [
     "Retirer",
@@ -70,7 +72,10 @@ export default function OffresPage() {
     const [selectedOffres, setSelectedOffres] = useState<string[]>([]);
     const [isOpen, setIsOpen] = useState(false);
     const [isError, setError] = useState(false);
-    const [isErrorMsg, setErrorMsg] = useState<string>("");
+    const [errorMsg, setErrorMsg] = useState("");
+    const [successMsg, setSuccessMsg] = useState("");
+    const [showError, setShowError] = useState(false);
+    const [showSuccess, setShowSuccess] = useState(false);
 
     const filterRef = useRef<HTMLDivElement>(null);
     const groupRef = useRef<HTMLDivElement>(null);
@@ -84,6 +89,12 @@ export default function OffresPage() {
     const [rowId, setRowId] = useState<string>("");
 
     const router = useRouter();
+
+    const [search, setSearch] = useState("");
+    const [page, setPage] = useState(1);
+    const [total, setTotal] = useState(0);
+    const limit = 10;
+
 
     const actionsGroupe = [
         "Retirer",
@@ -131,18 +142,75 @@ export default function OffresPage() {
 
 
 
-    async function getOffres() {
+    useEffect(() => {
 
 
-        const response = await api.get("candidats/mes_appel_offre_save");
+        // Cas 2 : recherche mais moins de 3 caractères
+        if (search && search.trim().length > 0 && search.trim().length < 3) return;
+
+        const timer = setTimeout(() => {
+
+            fetchOffres(search, selectedFilter, page);
+
+        }, 500);
+
+        return () => clearTimeout(timer);
+
+    }, [search, selectedFilter, page]);
+
+
+    useEffect(() => {
+
+        if (search.trim().length !== 0) return;
+        getOffres(page, limit);
+    }, [page]);
+
+
+    const fetchOffres = async (searchValue: string, filterValue: string, pageNumber: number) => {
+
+        try {
+
+
+            const res = await api.get("candidats/mes_appel_offre_save_search", {
+                params: {
+                    search: searchValue,
+                    filter: filterValue,
+                    page: pageNumber,
+                    limit: 10
+                }
+            });
+
+
+            setOffreTab(res.data.data)
+
+            setTotal(res.data.total)
+
+
+        } catch (error) {
+            console.error(error);
+        }
+
+    };
+
+
+    async function getOffres(pageNumber: number = 1, limit: number = 10) {
+
+
+        const response = await api.get("candidats/mes_appel_offre_save", {
+            params: {
+                page: pageNumber,
+                limit: limit
+            }
+        });
 
         const { data, status } = response
 
-        console.log(response)
 
         if (status == 201) {
 
             setOffreTab(data.data)
+
+            setTotal(data.total)
 
         }
 
@@ -178,8 +246,8 @@ export default function OffresPage() {
     const handleGroupAction = (action: string) => {
 
         if (selectedOffres.length === 0) {
-            setError(true)
-            setErrorMsg("Veuillez sélectionner au moins une offre.")
+            setErrorMsg("Veuillez sélectionner au moins une offre.");
+            setShowError(true);
             return;
         }
 
@@ -429,12 +497,21 @@ export default function OffresPage() {
 
 
 
-                    {isError && (
+                    {showError && (
                         <PopupError
-                            isOpen={isError}
+                            isOpen={showError}
                             title="Erreur"
-                            message={isErrorMsg}
-                            onClose={() => setError(false)}
+                            message={errorMsg}
+                            onClose={() => setShowError(false)}
+                        />
+                    )}
+
+                    {showSuccess && (
+                        <PopupSuccess
+                            isOpen={showSuccess}
+                            title="Success"
+                            message={successMsg}
+                            onClose={() => setShowSuccess(false)}
                         />
                     )}
 
@@ -450,27 +527,7 @@ export default function OffresPage() {
 
 
                             {/* === >Offre d’emploi / Appels d’offres === */}
-                            <div className="filterWrapper" ref={btnOffreAppelRef}>
-                                <Link href={`${process.env.LOCAL_HOST}/entreprises/dashboard/enregistrements`}>
-                                    <button
-                                        className="createButton"
-                                    >
-                                        Offre emploi
-                                    </button>
-                                </Link>
 
-
-                                <Link href={`${process.env.LOCAL_HOST}/entreprises/dashboard/enregistrements/candidats`}>
-                                    <button
-                                        className="createButton"
-                                    >
-                                        Candidats
-                                    </button>
-                                </Link>
-
-
-
-                            </div>
 
 
                         </div>
@@ -480,32 +537,14 @@ export default function OffresPage() {
                                 type="text"
                                 placeholder="Rechercher par titre / référence"
                                 className="search"
+                                value={search}
+                                onChange={(e) => {
+                                    setSearch(e.target.value);
+                                    setPage(1);
+                                }}
                             />
                             {/* === FILTRE === */}
-                            <div className="filterWrapper" ref={filterRef}>
-                                <button
-                                    className="filter"
-                                    onClick={() => setFilterOpen(!isFilterOpen)}
-                                >
-                                    {selectedFilter}
-                                </button>
 
-                                {isFilterOpen && (
-                                    <div className="dropdown">
-                                        {["Filtre", "Toutes", "Actives", "Expirées", "Brouillons", "Publier"].map(
-                                            (option) => (
-                                                <div
-                                                    key={option}
-                                                    className="dropdownItem"
-                                                    onClick={() => handleSelect(option)}
-                                                >
-                                                    {option}
-                                                </div>
-                                            )
-                                        )}
-                                    </div>
-                                )}
-                            </div>
 
 
                             {/* === ACTIONS GROUPEES === */}
@@ -619,6 +658,14 @@ export default function OffresPage() {
                             </tbody>
 
                         </table>
+
+                        <Pagination
+                            page={page}
+                            setPage={setPage}
+                            total={total}
+                            limit={limit}
+                        />
+
 
 
                     </div>

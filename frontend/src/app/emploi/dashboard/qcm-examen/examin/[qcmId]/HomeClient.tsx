@@ -1,12 +1,13 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
 import "./style.css";
-import Sidebar from "@/components/SidebarEntreprises/page";
+import Sidebar from "@/components/Sidebar/page";
 import QuestionBlocSequentiel from "@/components/QuestionBlocSequentiel/page";
 import QuestionBlocLibre from "@/components/QuestionBlocLibre/page";
 import QcmResultatModal from '@/components/modale/QcmResultatModal/page'
 import QcmIntroModal from '@/components/modale/QcmIntroModal/page'
-
+import Pagination from "@/components/PaginationTap/Pagination";
+import PopupSuccess from '@/components/modale/Popup/PopupSuccess/page'
 
 
 import { useParams } from "next/navigation";
@@ -91,6 +92,10 @@ export default function OffresPage() {
     const [startTime, setStartTime] = useState<number | null>(null);
 
 
+    const [errorMsg, setErrorMsg] = useState("");
+    const [successMsg, setSuccessMsg] = useState("");
+    const [showError, setShowError] = useState(false);
+    const [showSuccess, setShowSuccess] = useState(false);
 
 
 
@@ -309,7 +314,6 @@ export default function OffresPage() {
         const totalTimeMs = endTime - startTime;
         const totalTimeSeconds = Math.floor(totalTimeMs / 1000);
 
-        console.log("Temps total (secondes) :", totalTimeSeconds);
 
         const payload = {
             qcmId,
@@ -319,12 +323,25 @@ export default function OffresPage() {
             totalTimeSeconds
         };
 
-        console.log("Soumission finale :", payload);
 
         // ✅ Appel API groupé
         const res = await api.post(`/candidats/qcm_examin_exercice/`, { payload: payload });
 
-        console.log(res);
+            if (res.status == 201) {
+
+
+                const { data } = res
+
+                if (data.status == "success" || data.status == "no_change") {
+
+                    setSuccessMsg("Examen enregistré.");
+                    setShowSuccess(true)
+
+                }
+
+
+            }
+
 
 
 
@@ -446,6 +463,15 @@ export default function OffresPage() {
                     <Sidebar />
                     <div className="mainContent">
 
+                  
+                        {showSuccess && (
+                            <PopupSuccess
+                                isOpen={showSuccess}
+                                title="Success"
+                                message={successMsg}
+                                onClose={() => setShowSuccess(false)}
+                            />
+                        )}
 
                         <QcmResultatModal
                             isOpen={isModalOpen}

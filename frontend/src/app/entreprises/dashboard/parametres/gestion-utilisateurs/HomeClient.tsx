@@ -8,8 +8,27 @@ import ActionGestionCandidatsGrouperModal from '@/components/modale/ActionGestio
 import ActionGestionCandidatsModal from '@/components/modale//ActionGestionUtilisateursModal/page'
 import { useRouter } from "next/navigation";
 import api from "@/lib/axiosInstance";
+import Pagination from "@/components/PaginationTap/Pagination";
 
+const filters = [
+    "Filtre",
+    "Tous",
+    "Assignés",
+    "En cours",
+    "Terminé",
+    "Rejetés"
+] as const;
 
+type FilterKey = typeof filters[number];
+
+const filterStatusMap: Record<FilterKey, string[]> = {
+    "Filtre": [],
+    "Tous": ["ASSIGNED", "IN_PROGRESS", "COMPLETED"],
+    "Assignés": ["ASSIGNED"],
+    "En cours": ["IN_PROGRESS"],
+    "Terminé": ["COMPLETED"],
+    "Rejetés": ["REMOVED_BY_COMPANY", "DELETED_BY_CANDIDAT"]
+};
 
 interface Collaborateur {
     id: number;           // id dans la base (ex: 5)
@@ -72,13 +91,13 @@ export default function OffresPage() {
 
     const [isFilterOpen, setFilterOpen] = useState(false);
     const [isGroupOpen, setGroupOpen] = useState(false);
-    const [selectedFilter, setSelectedFilter] = useState("Toutes");
     const [openRowMenu, setOpenRowMenu] = useState<string | null>(null);
     const [actionType, setActionType] = useState<"delete" | "suspend">("delete");
     const [currentActionType, setCurrentActionType] = useState<"delete" | "suspend" | "modifier">("delete");
     const [currentAction, setCurrentAction] = useState<string>("");
     const [isOpen, setIsOpen] = useState(false);
     const [usersTab, setUsersTab] = useState<CollaborateurTable[]>([]);
+    const [selectedFilter, setSelectedFilter] = useState<FilterKey>("Filtre");
     const filterRef = useRef<HTMLDivElement>(null);
     const groupRef = useRef<HTMLDivElement>(null);
 
@@ -91,19 +110,82 @@ export default function OffresPage() {
     const [isRowModalOpen, setIsRowModalOpen] = useState(false);
     const [rowId, setRowId] = useState<string>("");
 
+    const [search, setSearch] = useState("");
+    const [page, setPage] = useState(1);
+    const [total, setTotal] = useState(0);
+    const limit = 10;
 
     const router = useRouter();
 
 
     const rowMenuRef = useRef<HTMLDivElement>(null);
 
-    useEffect(() => {
-        getOffres();
-    }, []);
 
-    async function getOffres() {
+    useEffect(() => {
+
+        const searchValue = search?.trim() || "";
+
+        // 🔹 Cas 1 : aucune recherche et filtre par défaut "Filtre"
+        if (!searchValue && selectedFilter === "Filtre") {
+            getOffres(page, limit); // applique juste le chargement normal
+            return;
+        }
+
+        // 🔹 Cas 2 : recherche trop courte (< 3 caractères)
+        if (searchValue && searchValue.length < 3) return;
+
+        // 🔹 Sinon, on lance la recherche avec filtre
+        const timer = setTimeout(() => {
+            fetchOffres(
+                searchValue,
+                selectedFilter,
+                page,
+                limit
+            );
+        }, 500);
+
+        return () => clearTimeout(timer);
+
+    }, [search, selectedFilter, page]);
+
+
+    const fetchOffres = async (searchValue: string, filterValue: FilterKey, page: number, limit: number) => {
+
         try {
-            const response = await api.get("entreprise_get/get_utilisateurs");
+
+            const status = filterStatusMap[filterValue];
+            const res = await api.get("entreprise_get/get_utilisateurs_search", {
+                params: {
+                    search: searchValue,
+                    filter: status,
+                    page,
+                    limit: 10
+                }
+            });
+
+            const offres = res.data.data || [];
+
+            const usersMapped = offres.map(mapCollaborateurToOffre);
+
+            setUsersTab(usersMapped || []);
+
+            setTotal(res.data.total || 0)
+
+
+        } catch (error) {
+            console.error(error);
+        }
+
+    };
+
+    async function getOffres(pageNumber: number = 1, limit: number = 10) {
+        try {
+            const response = await api.get("entreprise_get/get_utilisateurs", {
+                params: {
+                    page: pageNumber,
+                    limit: limit
+                }
+            });
             const entreprise = response.data?.data;
             if (!entreprise) return;
 
@@ -111,7 +193,10 @@ export default function OffresPage() {
 
             // 🔹 Transformer accepted → statut
             const usersMapped = entreprise.map(mapCollaborateurToOffre);
-            setUsersTab(usersMapped);
+
+            setUsersTab(usersMapped || []);
+            setTotal(response.data.total || 0)
+
 
         } catch (error) {
             console.error("❌ Erreur récupération entreprise :", error);
@@ -149,7 +234,7 @@ export default function OffresPage() {
     }, []);
 
 
-    const handleSelect = (value: string) => {
+    const handleSelect = (value: FilterKey) => {
         setSelectedFilter(value);
         setFilterOpen(false);
     };
@@ -357,10 +442,12 @@ export default function OffresPage() {
                         <div className="actions">
                             <input
                                 type="text"
-                                placeholder="Rechercher par titre / référence"
-                                className="search"
+                                placeholder="Recherche par titre"
+                                value={search}
+                                onChange={e => setSearch(e.target.value)}
                             />
                             {/* === FILTRE === */}
+                            {/*
                             <div className="filterWrapper" ref={filterRef}>
                                 <button
                                     className="filter"
@@ -369,8 +456,23 @@ export default function OffresPage() {
                                     {selectedFilter}
                                 </button>
 
+                                {isFilterOpen && (
+                                    <div className="dropdown">
+                                        {filters.map(
+                                            (option) => (
+                                                <div
+                                                    key={option}
+                                                    className="dropdownItem"
+                                                    onClick={() => handleSelect(option)}
+                                                >
+                                                    {option}
+                                                </div>
+                                            )
+                                        )}
+                                    </div>
+                                )}
+                            </div> */}
 
-                            </div>
 
 
                             {/* === ACTIONS GROUPEES === */}
@@ -471,6 +573,13 @@ export default function OffresPage() {
                                 ))}
                             </tbody>
                         </table>
+                        <Pagination
+                            page={page}
+                            setPage={setPage}
+                            total={total}
+                            limit={limit}
+                        />
+
 
 
 

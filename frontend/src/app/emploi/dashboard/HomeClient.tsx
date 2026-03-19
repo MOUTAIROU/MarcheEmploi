@@ -7,115 +7,110 @@ import { FaMapMarkerAlt, FaCircle } from "react-icons/fa";
 import AnnonceList from "@/components/AnnonceList/page";
 import Sidebar from "@/components/Sidebar/page";
 import Link from "next/link";
-import { useSession } from "@/lib/sessionStore";
+import api from "@/lib/axiosInstance";
+import AlertListe from "@/components/AlertListe/page";
 
-const annonces = [
-    {
-        id: 1,
-        statut: "En cours",
-        titre:
-            "Termes de Référence relatif au Mandat pour l’évaluation externe du projet Droits et Devoirs des Ouvriers Agricoles dans les exploitations de Production d’Ananas dans les Communes productrices d’Ananas",
-        localisation: "Benin",
-        montant: "60 000 000 000 F CFA",
-        datePublication: "Le 2 Oct 2025",
-        reste: "Reste 1 mois",
-        drapeau: "/images/benin-flag.png",
-    },
-    {
-        id: 2,
-        statut: "En cours",
-        titre:
-            "Termes de Référence relatif au Mandat pour l’évaluation externe du projet Droits et Devoirs des Ouvriers Agricoles dans les exploitations de Production d’Ananas dans les Communes productrices d’Ananas",
-        localisation: "Benin",
-        montant: "60 000 000 000 F CFA",
-        datePublication: "Le 2 Oct 2025",
-        reste: "Reste 1 mois",
-        drapeau: "/images/benin-flag.png",
-    },
-    {
-        id: 3,
-        statut: "En cours",
-        titre:
-            "Termes de Référence relatif au Mandat pour l’évaluation externe du projet Droits et Devoirs des Ouvriers Agricoles dans les exploitations de Production d’Ananas dans les Communes productrices d’Ananas",
-        localisation: "Benin",
-        montant: "60 000 000 000 F CFA",
-        datePublication: "Le 2 Oct 2025",
-        reste: "Reste 1 mois",
-        drapeau: "/images/benin-flag.png",
-    },
-    {
-        id: 4,
-        statut: "En cours",
-        titre:
-            "Termes de Référence relatif au Mandat pour l’évaluation externe du projet Droits et Devoirs des Ouvriers Agricoles dans les exploitations de Production d’Ananas dans les Communes productrices d’Ananas",
-        localisation: "Benin",
-        montant: "60 000 000 000 F CFA",
-        datePublication: "Le 2 Oct 2025",
-        reste: "Reste 1 mois",
-        drapeau: "/images/benin-flag.png",
-    },
-];
+
+interface DashboardStats {
+    stats: {
+        totalEntretien: number;
+        candidatures_total: number;
+        qcm_total: number;
+        notifications_non_lues: number;
+        
+    };
+    offres_detail: any; // ou typage précis si tu veux
+    derniers_messages: any[];
+    profile: {
+        logo: string;
+        nom: string;
+    }
+
+
+}
 
 export default function Home() {
 
-    const { session } = useSession();
-    const { accessToken } = useSession(); // <- récupère depuis le contexte
 
-    const [motsCles, setMotsCles] = useState<string[]>([]);
-    const [motCleInput, setMotCleInput] = useState("");
+    const [start, setStart] = useState<DashboardStats | null>(null);
+    const [messagesList, setMessagesList] = useState<any[]>([]);
+    const [offreTab, setOffreTab] = useState<any[]>([]);
 
-    const [pays, setPays] = useState<string[]>([]);
-    const [ville, setVille] = useState<string[]>([]);
-    const [secteurs, setSecteurs] = useState<string[]>([]);
-    const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
 
-    const [periode, setPeriode] = useState<string>("");
+    useEffect(() => {
+        getOffres();
+        // return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
 
-    const allPays = ["Bénin", "Togo", "Côte d’Ivoire", "Sénégal"];
-    const allVilles = ["Cotonou", "Parakou", "Abomey-Calavi"];
-    const allSecteurs = ["BTP", "Informatique", "Santé", "Éducation"];
-    const typeAnnonce = ["Marchés emplois", "Emplois", "Appels à projets", "Résultats de marchés"]
+    const formatDashboardMessage = (notif: any) => {
+        if (!notif) return null;
 
-    const periodeOptions = [
-        "Il y a 24h",
-        "Il y a 7 jours",
-        "Il y a 12 jours",
-        "Il y a 30 jours",
-    ];
 
-    const addMotCle = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === "Enter" && motCleInput.trim() !== "") {
-            e.preventDefault();
-            setMotsCles([...motsCles, motCleInput.trim()]);
-            setMotCleInput("");
+        const titre = notif.message?.title || "Notification";
+        const texte = notif.message?.message || "";
+        const dateIso = notif.date || notif.message?.meta?.created_at;
+
+        const date = new Date(dateIso);
+
+        const dateFormatee = date.toLocaleDateString("fr-FR", {
+            day: "numeric",
+            month: "short"
+        });
+
+        const heureFormatee = date.toLocaleTimeString("fr-FR", {
+            hour: "2-digit",
+            minute: "2-digit"
+        });
+
+        return {
+            titre,
+            texte: `${texte} — ${dateFormatee} à ${heureFormatee}`,
+            date: dateIso
+        };
+    };
+
+    async function getOffres() {
+
+
+
+        const response = await api.get("candidats/dashbord_starts");
+
+        const { data, status } = response
+
+
+        console.log(response)
+
+        if (status == 201) {
+
+            setOffreTab(data.data)
+            
+            setStart(data.data)
+
+            let derniers_messages = data.data.derniers_messages
+
+            const messagesDashboard = derniers_messages.map(formatDashboardMessage);
+
+            setMessagesList(messagesDashboard)
+
+
         }
-    };
 
-    const removeMotCle = (index: number) => {
-        setMotsCles(motsCles.filter((_, i) => i !== index));
-    };
 
-    const toggleSelect = (
-        item: string,
-        selected: string[],
-        setSelected: React.Dispatch<React.SetStateAction<string[]>>
-    ) => {
-        if (selected.includes(item)) {
-            setSelected(selected.filter((i) => i !== item));
-        } else {
-            setSelected([...selected, item]);
-        }
-    };
 
-    const toggleType = (item: string) => {
-        if (selectedTypes.includes(item)) {
-            setSelectedTypes(selectedTypes.filter((t) => t !== item));
-        } else {
-            setSelectedTypes([...selectedTypes, item]);
-        }
-    };
 
-    console.log(session,accessToken)
+
+
+
+
+        // return response.data;
+    }
+
+
+
+
+
+
+
 
     return (
         <div>
@@ -130,8 +125,24 @@ export default function Home() {
                     <div className="mainContent">
                         <div className="header-main-dashbord">
                             <div className="userInfo">
-                                <div className="avatar"></div>
-                                <span className="userName">Balogoun Fahrane</span>
+                                <div className="avatar">
+                                    {start && (
+
+
+                                        <Image
+                                            src={`${process.env.SERVER_HOST}/uploads/${start.profile.logo}`}
+                                            alt={`Logo de ${start.profile.nom}`}
+                                            width={400}
+                                            height={500}
+                                            className="entreprise-logo-home"
+                                        />
+
+                                    )}
+
+                                </div>
+                                {start && (
+                                    <span className="userName">{start.profile.nom || ""}</span>
+                                )}
                             </div>
 
                             <Link href={`${process.env.LOCAL_HOST}/emploi/dashboard/mon-cv`} className="updateBtn">Mettre à jour CV</Link>
@@ -140,18 +151,37 @@ export default function Home() {
                         <section className="stats section-dashboard">
                             <h3>Statistique</h3>
                             <div className="cards">
-                                <div className="card">
-                                    <h2>5</h2>
-                                    <p>Candidatures envoyées</p>
-                                </div>
-                                <div className="card">
-                                    <h2>15</h2>
-                                    <p>Offres sauvegardées</p>
-                                </div>
-                                <div className="card">
-                                    <h2>5</h2>
-                                    <p>Alertes actives</p>
-                                </div>
+
+                               
+                                {start && (
+                                    <div className="card">
+                                        <h2>{start.stats.candidatures_total || 0}</h2>
+                                        <p>Candidatures</p>
+                                    </div>
+                                )}
+
+                                {start && (
+                                    <div className="card">
+                                        <h2>{start.stats.qcm_total || 0}</h2>
+                                        <p>QCM</p>
+                                    </div>
+                                )}
+                                {start && (
+                                    <div className="card">
+                                        <h2>{start.stats.notifications_non_lues || 0}</h2>
+                                        <p>Alertes récentes</p>
+                                    </div>
+                                )}
+
+
+                                {start && (
+                                    <div className="card">
+                                        <h2>{start.stats.totalEntretien || 0}</h2>
+                                        <p>Entretien</p>
+                                    </div>
+                                )}
+
+
                             </div>
                         </section>
 
@@ -164,7 +194,7 @@ export default function Home() {
                             <h3>Dernières annonces</h3>
                         </div>
                         <div className='annonce-list-ctn'>
-                            <AnnonceList annonces={annonces} />
+                            {messagesList.length > 0 && <AlertListe annonces={messagesList} />}
                         </div>
 
                     </div>

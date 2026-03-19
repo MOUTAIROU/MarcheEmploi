@@ -13,27 +13,15 @@ exports.register = async ({ role, email, password, nom, pays, codePays, candidat
     // Vérifier si l'email existe
     const existing = await repository.findUserByEmail(email);
 
-    console.log(existing)
 
     if (existing) throw new Error("Email already exists");
 
 
-    console.log('-------------------------')
-    console.log(role, email, password, nom, pays, codePays, candidate_type)
-    console.log('-------------------------')
 
     // Hash du mot de passe
     const hashed = await bcrypt.hash(password, 10);
     const id = Date.now().toString();
 
-    console.log(id,
-        nom,
-        email.toLowerCase().trim(),
-        hashed,
-        role,
-        pays,
-        candidate_type,
-        codePays)
 
 
     // Création de l'utilisateur
@@ -115,6 +103,21 @@ exports.login = async ({ email, password }) => {
     const user = await repository.findUserByEmail(email);
 
     if (!user) throw new Error("Invalid email or password");
+
+
+    // 🔥 Vérification globale du status
+    if (user.status !== "active") {
+
+        if (user.status === "delete_by_user") {
+            throw new Error("Votre compte a été désactivé");
+        }
+
+        if (user.status === "desativer_by_systeme") {
+            throw new Error("Votre compte a été désactivé par le système");
+        }
+
+        throw new Error("Compte non actif");
+    }
 
 
     const valid = await bcrypt.compare(password, user.password);

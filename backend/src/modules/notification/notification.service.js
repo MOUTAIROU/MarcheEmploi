@@ -1,11 +1,13 @@
 const Notification = require("../models/Notification");
+const NotificationPreference = require("../models/notificationPreference");
 
 module.exports = {
     createOrUpdateNotification: async ({
         sender_id,
         receiver_id,
         sender_name,
-        receiver_name,  // <-- ajout du nom du receveur
+        receiver_name,
+        receiver_email,
 
         type,
         action,
@@ -17,110 +19,134 @@ module.exports = {
         object_label = null,
         meta = {},
     }) => {
+
         try {
 
-            console.log(sender_id, receiver_id, receiver_name, sender_name, type, action, title, message)
-            if (!sender_id || !receiver_id || !receiver_name || !sender_name || !type || !action || !title || !message) {
-                throw new Error("Paramètres de notification manquants");
+            if (!receiver_id) {
+                throw new Error("receiver_id manquant");
             }
 
+            // 🔹 récupérer préférences
+            const pref = await notification_parametre(receiver_id);
 
-            // 🔍 Recherche STRICTE dans le même sens
-            const conversation = await Notification.findOne({
-                where: {
-                    sender_id,
-                    receiver_id
-                }
-            });
+            if (!pref || !pref.enabled) {
+                return { status: "success", message: "Notifications désactivées" };
+            }
 
-            const newMessage = {
-                type,
-                action,
-                title,
-                message,
-                actor: {
-                    id: sender_id,
-                    name: sender_name || "Système",
-                },
+            // =========================
+            // 📧 EMAIL
+            // =========================
+            if (pref.email && receiver_email) {
 
-                receiver: {
-                    id: receiver_id,
-                    name: receiver_name || "Utilisateur",
-                },
+                /*
+                await sendEmailNotification(
+                    receiver_email,
+                    title,
+                    message
+                );*/
 
-                object: {
-                    id: object_id,
-                    type: object_type,
-                    label: object_label,
-                },
+            }
 
-                meta,
-                is_read: false,
-            };
+            // =========================
+            // 🔔 NOTIFICATION INTERNE
+            // =========================
+            if (pref.internal) {
 
-
-
-            // ✅ UPDATE si existe
-            if (conversation) {
-                const data = conversation.data || {};
-                const messages = data.messages || [];
-
-               
-
-
-                messages.push(newMessage);
-
-              
-
-                await Notification.update(
-                    {
-                        data: {
-                            ...data,
-                            messages
-                        },
-                        is_read: false
-                    },
-                    {
-                        where: {
-                            sender_id,
-                            receiver_id
-                        }
+                const conversation = await Notification.findOne({
+                    where: {
+                        sender_id,
+                        receiver_id
                     }
-                );
+                });
 
-                return {
-                    status: "success",
-                    message: "Message ajouté à la conversation"
+                const newMessage = {
+                    type,
+                    action,
+                    title,
+                    message,
+
+                    actor: {
+                        id: sender_id,
+                        name: sender_name || "Système",
+                    },
+
+                    receiver: {
+                        id: receiver_id,
+                        name: receiver_name || "Utilisateur",
+                    },
+
+                    object: {
+                        id: object_id,
+                        type: object_type,
+                        label: object_label,
+                    },
+
+                    meta,
+                    is_read: false,
                 };
-            }
-            // 🆕 CREATE sinon
-            await Notification.create({
-                sender_id,
-                receiver_id,
-                is_read: false,
-                data: {
-                    messages: [newMessage]
+
+                // 🔹 UPDATE
+                if (conversation) {
+
+                    const data = conversation.data || {};
+                    const messages = data.messages || [];
+
+                    messages.push(newMessage);
+
+                    await Notification.update(
+                        {
+                            data: {
+                                ...data,
+                                messages
+                            },
+                            is_read: false
+                        },
+                        {
+                            where: { sender_id, receiver_id }
+                        }
+                    );
+
                 }
-            });
+                // 🔹 CREATE
+                else {
+
+                    await Notification.create({
+                        sender_id,
+                        receiver_id,
+                        is_read: false,
+                        data: {
+                            messages: [newMessage]
+                        }
+                    });
+
+                }
+
+            }
 
             return {
                 status: "success",
-                message: "Conversation créée"
-            };
-
-
-            return {
-                status: "success",
-                message: "Notification envoyée",
+                message: "Notification envoyée"
             };
 
         } catch (err) {
-            console.error("❌ Erreur sendNotification :", err);
+
+            console.error("❌ Notification error:", err);
+
             return {
                 status: "error",
-                message: "Erreur lors de l'envoi de la notification",
+                message: "Erreur notification"
             };
+
         }
     }
-}
+};
 
+async function notification_parametre(user_id) {
+
+    const pref = await NotificationPreference.findOne({
+        where: { user_id },
+        raw: true
+    });
+
+    return pref;
+}

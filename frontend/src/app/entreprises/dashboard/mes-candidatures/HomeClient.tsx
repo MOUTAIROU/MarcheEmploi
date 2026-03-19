@@ -9,6 +9,54 @@ import PopupError from '@/components/modale/Popup/PopupError/page'
 import "./style.css";
 import Sidebar from "@/components/SidebarEntreprises/page";
 import api from "@/lib/axiosInstance";
+import Pagination from "@/components/PaginationTap/Pagination";
+
+const filters = [
+    "Filtre",
+    "Toutes",
+    "Actives",
+    "En évaluation",
+    "En attente",
+    "Acceptés",
+    "Rejetés"
+] as const;
+
+type FilterKey = typeof filters[number];
+
+const filterStatusMap: Record<FilterKey, string[]> = {
+    "Filtre": [],
+    "Toutes": [
+        "APPLIED",
+        "WAITING_EXAM",
+        "COMPLETED",
+        "ENTRETIEN_PROGRAMME",
+        "PENDING",
+        "ACCEPTE",
+        "REJETE"
+    ],
+
+    "Actives": [
+        "APPLIED",
+        "WAITING_EXAM"
+    ],
+
+    "En évaluation": [
+        "COMPLETED",
+        "ENTRETIEN_PROGRAMME"
+    ],
+
+    "En attente": [
+        "PENDING"
+    ],
+
+    "Acceptés": [
+        "ACCEPTE"
+    ],
+
+    "Rejetés": [
+        "REJETE"
+    ]
+};
 
 const actions = [
     "Voir la lettre de motivation",
@@ -168,10 +216,9 @@ export default function OffresPage() {
     const [isFilterOpen, setFilterOpen] = useState(false);
     const [offreTab, setOffreTab] = useState<AnnonceDashboardItem[]>([]);
     const [tabAnnonce, setTabAnnonce] = useState<AnnonceEvent[]>([]);
-
+    const [selectedFilter, setSelectedFilter] = useState<FilterKey>("Filtre");
     const [isGroupOpen, setGroupOpen] = useState(false);
     const [btnOffreAppelOpen, setBtnOffreAppelOpen] = useState(false);
-    const [selectedFilter, setSelectedFilter] = useState("Toutes");
     const [openRowMenu, setOpenRowMenu] = useState<string | null>(null);
     const [selectedIds, setSelectedIds] = useState<string[]>([]);
     const [isOpen, setIsOpen] = useState(false);
@@ -195,13 +242,71 @@ export default function OffresPage() {
 
     const router = useRouter();
 
+    const [search, setSearch] = useState("");
+    const [page, setPage] = useState(1);
+    const [total, setTotal] = useState(0);
+    const limit = 10;
+
     const actionsGroupe = [
         "Se Retierer",
     ];
 
 
     useEffect(() => {
-        getOffres();
+
+        // Cas 1 : aucun filtre et aucune recherche
+        if (!search && selectedFilter === "Filtre") return;
+
+        // Cas 2 : recherche mais moins de 3 caractères
+        if (search && search.trim().length > 0 && search.trim().length < 3) return;
+
+        const timer = setTimeout(() => {
+
+            fetchOffres(search, selectedFilter, page);
+
+        }, 500);
+
+        return () => clearTimeout(timer);
+
+    }, [search, selectedFilter, page]);
+
+
+    useEffect(() => {
+
+        if (search.trim().length !== 0) return;
+        getOffres(page, limit);
+    }, [page]);
+
+    const fetchOffres = async (searchValue: string, filterValue: FilterKey, pageNumber: number) => {
+
+        try {
+
+            const status = filterStatusMap[filterValue];
+
+            const res = await api.get("entreprise_get/mes_condidatures_search_offres", {
+                params: {
+                    search: searchValue,
+                    filter: status,
+                    page: pageNumber,
+                    limit: 10
+                }
+            });
+
+
+            setOffreTab(res.data.data)
+
+            setTotal(res.data.total)
+
+
+        } catch (error) {
+            console.error(error);
+        }
+
+    };
+
+
+    useEffect(() => {
+        getOffres(page, limit);
 
         const handleClickOutside = (event: MouseEvent) => {
             const target = event.target as Node | null;
@@ -241,19 +346,24 @@ export default function OffresPage() {
 
 
 
-    async function getOffres() {
+    async function getOffres(pageNumber: number = 1, limit: number = 10) {
 
 
-
-        const response = await api.get("entreprise_get/mes_condidatures");
+        const response = await api.get("entreprise_get/mes_condidatures", {
+            params: {
+                page: pageNumber,
+                limit: limit
+            }
+        });
 
         const { data, status } = response
 
-        console.log(response)
 
         if (status == 201) {
 
             setOffreTab(data.data)
+
+            setTotal(data.total)
 
         }
 
@@ -261,7 +371,7 @@ export default function OffresPage() {
 
         // return response.data;
     }
-    const handleSelect = (value: string) => {
+    const handleSelect = (value: FilterKey) => {
         setSelectedFilter(value);
         setFilterOpen(false);
     };
@@ -422,7 +532,7 @@ export default function OffresPage() {
             let res = await api.delete(`/entreprise_get/delete_offres_mes_candidature_group/${selectedOffres}`);
 
             if (res.status == 201) {
-                getOffres()
+                getOffres(page, limit)
             }
 
         }
@@ -497,7 +607,7 @@ export default function OffresPage() {
                 let res = await api.delete(`/entreprise_get/delete_offres_mes_candidature/${rowId}`);
 
                 if (res.status == 201) {
-                    getOffres()
+                    getOffres(page, limit)
                 }
 
             }
@@ -616,11 +726,21 @@ export default function OffresPage() {
                         </div>
 
                         <div className="actions">
-                            <input
-                                type="text"
-                                placeholder="Rechercher par titre / référence"
-                                className="search"
-                            />
+                            <div className="searchWrapper">
+
+                                <input
+                                    type="text"
+                                    placeholder="Rechercher par titre / référence"
+                                    className="search"
+                                    value={search}
+                                    onChange={(e) => {
+                                        setSearch(e.target.value);
+                                        setPage(1);
+                                    }}
+                                />
+
+                            </div>
+
                             {/* === FILTRE === */}
                             <div className="filterWrapper" ref={filterRef}>
                                 <button
@@ -632,17 +752,15 @@ export default function OffresPage() {
 
                                 {isFilterOpen && (
                                     <div className="dropdown">
-                                        {["Filtre", "Toutes", "Actives", "Expirées", "Brouillons", "Publier"].map(
-                                            (option) => (
-                                                <div
-                                                    key={option}
-                                                    className="dropdownItem"
-                                                    onClick={() => handleSelect(option)}
-                                                >
-                                                    {option}
-                                                </div>
-                                            )
-                                        )}
+                                        {filters.map((option) => (
+                                            <div
+                                                key={option}
+                                                className="dropdownItem"
+                                                onClick={() => handleSelect(option)}
+                                            >
+                                                {option}
+                                            </div>
+                                        ))}
                                     </div>
                                 )}
                             </div>
@@ -766,6 +884,12 @@ export default function OffresPage() {
                             </tbody>
                         </table>
 
+                        <Pagination
+                            page={page}
+                            setPage={setPage}
+                            total={total}
+                            limit={limit}
+                        />
 
                     </div>
                 </div>

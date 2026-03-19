@@ -10,34 +10,26 @@ const candidatPreference = sequelize.define(
             primaryKey: true,  // OBLIGATOIRE
         },
         user_id: {
-             type: DataTypes.STRING(50)
-         },
-       // 🔥 NOUVEAU : toutes les préférences ici
-        settings: {
-            type: DataTypes.JSON, // ou JSONB si PostgreSQL
+            type: DataTypes.STRING(50)
+        },
+        // 🔥 NOUVEAU : toutes les préférences ici
+       
+        enabled: {
+            type: DataTypes.BOOLEAN,
             allowNull: false,
-            defaultValue: {
-                emploi: {
-                    enabled: true,
-                    channels: ["email"],
-                    frequency: "immediate",
-                },
-                actualites: {
-                    enabled: true,
-                    channels: ["email"],
-                    frequency: "daily",
-                },
-                entretien: {
-                    enabled: true,
-                    channels: ["email"],
-                    frequency: "immediate",
-                },
-                whatsapp: {
-                    enabled: false,
-                    channels: ["whatsapp"],
-                    frequency: "immediate",
-                },
-            },
+            defaultValue: true,
+        },
+
+        email: {
+            type: DataTypes.BOOLEAN,
+            allowNull: false,
+            defaultValue: true,
+        },
+
+        internal: {
+            type: DataTypes.BOOLEAN,
+            allowNull: false,
+            defaultValue: true,
         },
         createdAt: {
             type: DataTypes.DATE,
